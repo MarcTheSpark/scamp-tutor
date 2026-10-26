@@ -4804,6 +4804,9 @@ class pymusicxml.score_components.KeySignature
    +------------+--------------------------------------------------------------------------------------------+
    | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
    +------------+--------------------------------------------------------------------------------------------+
+   | "step_alte | Map of step letter -> alteration (in half steps) implied by this key.                      |
+   | rations"() |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
    | "wrap_as_s | Wraps this component in a "Score" so that it can be exported and viewed                    |
    | core"()    |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
@@ -4854,6 +4857,11 @@ class pymusicxml.score_components.KeySignature
       reason for making it a tuple is that musical objects like chords
       are represented by several notes side by side, with all but the
       first containing a </chord> tag.)
+
+   step_alterations() -> dict
+
+      Map of step letter -> alteration (in half steps) implied by this
+      key.
 
    wrap_as_score() -> Score
 
@@ -4959,7 +4967,9 @@ class pymusicxml.score_components.Measure(contents: Sequence[DurationalObject] |
    | "notations | Returns a tuple of all to the Notation in this measure, returned in order within the       |
    | "()        | measure.                                                                                   |
    +------------+--------------------------------------------------------------------------------------------+
-   | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
+   | "render"([ | Renders this component to a tuple of ElementTree.Element.                                  |
+   | divisions] |                                                                                            |
+   | )          |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "wrap_as_s | Wraps this component in a "Score" so that it can be exported and viewed                    |
    | core"()    |                                                                                            |
@@ -5072,7 +5082,7 @@ class pymusicxml.score_components.Measure(contents: Sequence[DurationalObject] |
       Returns a tuple of all to the Notation in this measure, returned
       in order within the measure.
 
-   render() -> Sequence[Element]
+   render(divisions: int = None) -> Sequence[Element]
 
       Renders this component to a tuple of ElementTree.Element. (The
       reason for making it a tuple is that musical objects like chords
@@ -5466,6 +5476,9 @@ class pymusicxml.score_components.NonTraditionalKeySignature(*step_alteration_tu
    +------------+--------------------------------------------------------------------------------------------+
    | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
    +------------+--------------------------------------------------------------------------------------------+
+   | "step_alte | Map of step letter -> alteration (in half steps) implied by this key.                      |
+   | rations"() |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
 
@@ -5520,6 +5533,11 @@ class pymusicxml.score_components.NonTraditionalKeySignature(*step_alteration_tu
       reason for making it a tuple is that musical objects like chords
       are represented by several notes side by side, with all but the
       first containing a </chord> tag.)
+
+   step_alterations() -> dict
+
+      Map of step letter -> alteration (in half steps) implied by this
+      key.
 
    export_to_file(file_path: str, pretty_print: bool = True) -> None
 
@@ -5948,6 +5966,13 @@ class pymusicxml.score_components.NumberedSpanner(label: Any = 1)
    Abstract base class for part of a Direction or Notation that spans
    multiple time-points.
 
+   Parameters:
+      **label** -- A label distinguishing this spanner from others of
+      the same type, so that a start and its stop can be paired (a
+      stop's label should match its start's). In the MusicXML standard
+      this is a number from 1 to 6, but pymusicxml allows anything
+      (e.g. a string); labels are converted to numbers on export.
+
 
 ======================================================================
 === FILE: pymusicxml/pymusicxml.score_components.Part.txt
@@ -5996,7 +6021,9 @@ class pymusicxml.score_components.Part(part_name: str, measures: Sequence[Measur
    | tation_typ |                                                                                            |
    | e])        |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
+   | "render"([ | Renders this component to a tuple of ElementTree.Element.                                  |
+   | divisions] |                                                                                            |
+   | )          |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "render_pa | Renders the "score-part" tag for the top of the MusicXML score.                            |
    | rt_list_en |                                                                                            |
@@ -6098,7 +6125,7 @@ class pymusicxml.score_components.Part(part_name: str, measures: Sequence[Measur
          **notation_type** -- the type of notation to filter for, if
          any
 
-   render() -> Sequence[Element]
+   render(divisions: int = None) -> Sequence[Element]
 
       Renders this component to a tuple of ElementTree.Element. (The
       reason for making it a tuple is that musical objects like chords
@@ -6212,7 +6239,9 @@ class pymusicxml.score_components.PartGroup(parts: Sequence[Part] = None, has_br
    -[ Methods ]-
 
    +------------+--------------------------------------------------------------------------------------------+
-   | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
+   | "render"([ | Renders this component to a tuple of ElementTree.Element.                                  |
+   | divisions] |                                                                                            |
+   | )          |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "render_pa | Renders the "part-group" tag and containing "score-part" tags for the top of the MusicXML  |
    | rt_list_en | score.                                                                                     |
@@ -6278,7 +6307,7 @@ class pymusicxml.score_components.PartGroup(parts: Sequence[Part] = None, has_br
 
       List of parts in this group.
 
-   render() -> Sequence[Element]
+   render(divisions: int = None) -> Sequence[Element]
 
       Renders this component to a tuple of ElementTree.Element. (The
       reason for making it a tuple is that musical objects like chords
@@ -6430,6 +6459,13 @@ class pymusicxml.score_components.Pitch(step: str, octave: int, alteration: floa
    | ommand)    |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
 
+   -[ Attributes ]-
+
+   +------------+--------------------------------------------------------------------------------------------+
+   | "accidenta | The MusicXML accidental for this pitch's alteration, or None if it can't be drawn with a   |
+   | l_name"    | standard accidental (e.g. a fine microtone).                                               |
+   +------------+--------------------------------------------------------------------------------------------+
+
    classmethod from_string(pitch_string: str)
 
       Constructs Pitch from either a lilypond pitch string or from
@@ -6450,6 +6486,12 @@ class pymusicxml.score_components.Pitch(step: str, octave: int, alteration: floa
       reason for making it a tuple is that musical objects like chords
       are represented by several notes side by side, with all but the
       first containing a </chord> tag.)
+
+   property accidental_name: str | None
+
+      The MusicXML accidental for this pitch's alteration, or None if
+      it can't be drawn with a standard accidental (e.g. a fine
+      microtone).
 
    wrap_as_score() -> Score
 
@@ -6873,6 +6915,9 @@ class pymusicxml.score_components.TraditionalKeySignature(fifths, mode=None, can
    +------------+--------------------------------------------------------------------------------------------+
    | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
    +------------+--------------------------------------------------------------------------------------------+
+   | "step_alte | Map of step letter -> alteration (in half steps) implied by this key.                      |
+   | rations"() |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
 
@@ -6914,6 +6959,11 @@ class pymusicxml.score_components.TraditionalKeySignature(fifths, mode=None, can
       reason for making it a tuple is that musical objects like chords
       are represented by several notes side by side, with all but the
       first containing a </chord> tag.)
+
+   step_alterations() -> dict
+
+      Map of step letter -> alteration (in half steps) implied by this
+      key.
 
    export_to_file(file_path: str, pretty_print: bool = True) -> None
 
@@ -7782,6 +7832,8 @@ musical score.
 
     * "KeySignature.render()"
 
+    * "KeySignature.step_alterations()"
+
     * "KeySignature.wrap_as_score()"
 
     * "KeySignature.export_to_file()"
@@ -7897,6 +7949,8 @@ musical score.
     * "NonTraditionalKeySignature.add_alteration()"
 
     * "NonTraditionalKeySignature.render()"
+
+    * "NonTraditionalKeySignature.step_alterations()"
 
     * "NonTraditionalKeySignature.export_to_file()"
 
@@ -8062,6 +8116,8 @@ musical score.
 
     * "Pitch.render()"
 
+    * "Pitch.accidental_name"
+
     * "Pitch.wrap_as_score()"
 
     * "Pitch.export_to_file()"
@@ -8147,6 +8203,8 @@ musical score.
   * "TraditionalKeySignature"
 
     * "TraditionalKeySignature.render()"
+
+    * "TraditionalKeySignature.step_alterations()"
 
     * "TraditionalKeySignature.export_to_file()"
 
@@ -8247,8 +8305,7 @@ class pymusicxml.spanners.ChangePedal(label: Any = 1, sign: bool = True, line: b
    Pedal change in the middle of a sustain pedal spanner.
 
    Parameters:
-      * **label** -- this should correspond to the label of the
-        associated "StartPedal"
+      * **label** -- See "NumberedSpanner".
 
       * **sign** -- unclear what this means in the case of a change
         pedal
@@ -8355,11 +8412,7 @@ class pymusicxml.spanners.StartBracket(label: Any = 1, line_type: str | LineType
    Start of a bracket spanner.
 
    Parameters:
-      * **label** -- each spanner is given an label to distinguish it
-        from other spanners of the same type. In the MusicXML
-        standard, this is a number from 1 to 6, but in pymusicxml it
-        is allowed to be anything (including, for instance, a string).
-        These labels are then converted to numbers on export.
+      * **label** -- See "NumberedSpanner".
 
       * **line_end** -- Type of hook/arrow at the start of this
         bracket
@@ -8483,11 +8536,7 @@ class pymusicxml.spanners.StartDashes(label: Any = 1, dash_length: Real = None, 
    marking)
 
    Parameters:
-      * **label** -- each spanner is given an label to distinguish it
-        from other spanners of the same type. In the MusicXML
-        standard, this is a number from 1 to 6, but in pymusicxml it
-        is allowed to be anything (including, for instance, a string).
-        These labels are then converted to numbers on export.
+      * **label** -- See "NumberedSpanner".
 
       * **dash_length** -- Length of the dashes
 
@@ -8612,11 +8661,7 @@ class pymusicxml.spanners.StartHairpin(hairpin_type: str | HairpinType, label: A
       * **hairpin_type** -- the type of hairpin ("crescendo" or
         "diminuendo")
 
-      * **label** -- each spanner is given an label to distinguish it
-        from other spanners of the same type. In the MusicXML
-        standard, this is a number from 1 to 6, but in pymusicxml it
-        is allowed to be anything (including, for instance, a string).
-        These labels are then converted to numbers on export.
+      * **label** -- See "NumberedSpanner".
 
    -[ Methods ]-
 
@@ -8710,6 +8755,140 @@ class pymusicxml.spanners.StartHairpin(hairpin_type: str | HairpinType, label: A
 
 
 ======================================================================
+=== FILE: pymusicxml/pymusicxml.spanners.StartOctaveLine.txt
+======================================================================
+
+pymusicxml.spanners.StartOctaveLine
+***********************************
+
+class pymusicxml.spanners.StartOctaveLine(label: Any = 1, octaves: int = 1, dash_length: Real = None, space_length: Real = None, placement: str | StaffPlacement = 'above', voice: int = 1, staff: int = None)
+
+   Bases: "Direction", "StartNumberedSpanner"
+
+   Start of an octave-shift line, i.e. an "8va"/"8vb"/"15ma" bracket
+   with a dashed line and terminal hook.
+
+   Parameters:
+      * **label** -- See "NumberedSpanner".
+
+      * **octaves** -- how many octaves, and in which direction, the
+        notes are displaced. Positive means the notes sound higher
+        than written (8va, drawn above): 1 = 8va, 2 = 15ma, 3 = 22ma.
+        Negative means the notes sound lower than written (8vb, drawn
+        below). (Note that the resulting musicxml looks backwards
+        because it describes the modification of the written notes
+        relative to how they would be written with no ottava.)
+
+      * **dash_length** -- Length of the dashes (in tenths). (Note:
+        some renderers, e.g. verovio, ignore this.)
+
+      * **space_length** -- Length of the space between dashes (in
+        tenths).
+
+      * **placement** -- Where to place the direction in relation to
+        the staff ("above" or "below")
+
+      * **voice** -- Which voice to attach to
+
+      * **staff** -- Which staff to attach to if the part has multiple
+        staves
+
+   -[ Methods ]-
+
+   +------------+--------------------------------------------------------------------------------------------+
+   | "render_di | Renders the <direction-type> element that constitutes the main substance of a <direction>  |
+   | rection_ty | element.                                                                                   |
+   | pe"()      |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+
+   -[ Inherited Methods ]-
+
+   +------------+--------------------------------------------------------------------------------------------+
+   | "export_to | Exports this musical object (wrapped as a score) to the given file path.                   |
+   | _file"(fil |                                                                                            |
+   | e_path[, p |                                                                                            |
+   | retty_prin |                                                                                            |
+   | t])        |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "to_xml"([ | Renders this component to MusicXML, adding a version tag, but not wrapping it up as a full |
+   | pretty_pri | score.                                                                                     |
+   | nt])       |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "view_in_s | Uses the given terminal command to create a score out of this musical object, and open it  |
+   | oftware"(c | in music notation software.                                                                |
+   | ommand)    |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "wrap_as_s | Wraps this component in a "Score" so that it can be exported and viewed                    |
+   | core"()    |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+
+   -[ Attributes ]-
+
+   +------------+--------------------------------------------------------------------------------------------+
+   | "MID_TYPES |                                                                                            |
+   | "          |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "size"     |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+
+   STOP_TYPE
+
+      alias of "StopOctaveLine"
+
+   property size: int
+
+   render_direction_type() -> Sequence[Element]
+
+      Renders the <direction-type> element that constitutes the main
+      substance of a <direction> element.
+
+   MID_TYPES: Sequence[MidNumberedSpanner] = ()
+
+   export_to_file(file_path: str, pretty_print: bool = True) -> None
+
+      Exports this musical object (wrapped as a score) to the given
+      file path.
+
+      Parameters:
+         * **file_path** -- The path of the file we want to write to.
+
+         * **pretty_print** -- If True, breaks the MusicXML onto
+           multiple lines, with indentation
+
+   render() -> Sequence[Element]
+
+      Renders this component to a tuple of ElementTree.Element. (The
+      reason for making it a tuple is that musical objects like chords
+      are represented by several notes side by side, with all but the
+      first containing a </chord> tag.)
+
+   to_xml(pretty_print: bool = False) -> str
+
+      Renders this component to MusicXML, adding a version tag, but
+      not wrapping it up as a full score.
+
+      Parameters:
+         **pretty_print** -- If True, breaks the MusicXML onto
+         multiple lines, with indentation
+
+   view_in_software(command: str) -> None
+
+      Uses the given terminal command to create a score out of this
+      musical object, and open it in music notation software.
+
+      Parameters:
+         **command** -- The terminal command corresponding to the
+         software with which we want to open the score.
+
+   wrap_as_score() -> Score
+
+      Wraps this component in a "Score" so that it can be exported and
+      viewed
+
+
+======================================================================
 === FILE: pymusicxml/pymusicxml.spanners.StartPedal.txt
 ======================================================================
 
@@ -8723,11 +8902,7 @@ class pymusicxml.spanners.StartPedal(label: Any = 1, sign: bool = True, line: bo
    Start of a sustain pedal spanner.
 
    Parameters:
-      * **label** -- each spanner is given an label to distinguish it
-        from other spanners of the same type. In the MusicXML
-        standard, this is a number from 1 to 6, but in pymusicxml it
-        is allowed to be anything (including, for instance, a string).
-        These labels are then converted to numbers on export.
+      * **label** -- See "NumberedSpanner".
 
       * **sign** -- whether or not to include a "Ped" sign
 
@@ -8846,11 +9021,7 @@ class pymusicxml.spanners.StartSlur(label: Any = 1)
    Notation to attach to a note that starts a slur
 
    Parameters:
-      **label** -- each spanner is given an label to distinguish it
-      from other spanners of the same type. In the MusicXML standard,
-      this is a number from 1 to 6, but in pymusicxml it is allowed to
-      be anything (including, for instance, a string). These labels
-      are then converted to numbers on export.
+      **label** -- See "NumberedSpanner".
 
    -[ Methods ]-
 
@@ -8948,11 +9119,7 @@ class pymusicxml.spanners.StartTrill(label: Any = 1, placement: StaffPlacement |
    Starts a trill spanner with a wavy line.
 
    Parameters:
-      * **label** -- each spanner is given an label to distinguish it
-        from other spanners of the same type. In the MusicXML
-        standard, this is a number from 1 to 6, but in pymusicxml it
-        is allowed to be anything (including, for instance, a string).
-        These labels are then converted to numbers on export.
+      * **label** -- See "NumberedSpanner".
 
       * **placement** -- Where to place the direction in relation to
         the staff ("above" or "below")
@@ -9056,8 +9223,7 @@ class pymusicxml.spanners.StopBracket(label: Any = 1, line_end: str | LineEnd = 
    End of a bracket spanner.
 
    Parameters:
-      * **label** -- this should correspond to the label of the
-        associated "StartBracket"
+      * **label** -- See "NumberedSpanner".
 
       * **line_end** -- Type of hook/arrow at the end of this bracket
 
@@ -9167,8 +9333,7 @@ class pymusicxml.spanners.StopDashes(label: Any = 1, text: str | TextAnnotation 
    marking)
 
    Parameters:
-      * **label** -- this should correspond to the label of the
-        associated "StartDashes"
+      * **label** -- See "NumberedSpanner".
 
       * **text** -- Any text to attach to the end of this dashed
         spanner
@@ -9273,8 +9438,7 @@ class pymusicxml.spanners.StopHairpin(label: Any = 1, spread: Real = None, place
    Notation to attach to a note that ends a hairpin
 
    Parameters:
-      **label** -- this should correspond to the label of the
-      associated "StartHairpin"
+      **label** -- See "NumberedSpanner".
 
    -[ Methods ]-
 
@@ -9355,6 +9519,121 @@ class pymusicxml.spanners.StopHairpin(label: Any = 1, spread: Real = None, place
 
 
 ======================================================================
+=== FILE: pymusicxml/pymusicxml.spanners.StopOctaveLine.txt
+======================================================================
+
+pymusicxml.spanners.StopOctaveLine
+**********************************
+
+class pymusicxml.spanners.StopOctaveLine(label: Any = 1, octaves: int = 1, placement: str | StaffPlacement = 'above', voice: int = 1, staff: int = None)
+
+   Bases: "Direction", "StopNumberedSpanner"
+
+   End of an octave-shift line (e.g. the end of an "8va" or "8vb").
+
+   Parameters:
+      * **label** -- See "NumberedSpanner".
+
+      * **octaves** -- how many octaves the line displaces; should
+        match the associated "StartOctaveLine". Only the magnitude
+        matters here (a stop carries no direction): 1 = 8va/8vb, 2 =
+        15ma/15mb, 3 = 22ma/22mb.
+
+      * **placement** -- Where to place the direction in relation to
+        the staff ("above" or "below")
+
+      * **voice** -- Which voice to attach to
+
+      * **staff** -- Which staff to attach to if the part has multiple
+        staves
+
+   -[ Methods ]-
+
+   +------------+--------------------------------------------------------------------------------------------+
+   | "render_di | Renders the <direction-type> element that constitutes the main substance of a <direction>  |
+   | rection_ty | element.                                                                                   |
+   | pe"()      |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+
+   -[ Inherited Methods ]-
+
+   +------------+--------------------------------------------------------------------------------------------+
+   | "export_to | Exports this musical object (wrapped as a score) to the given file path.                   |
+   | _file"(fil |                                                                                            |
+   | e_path[, p |                                                                                            |
+   | retty_prin |                                                                                            |
+   | t])        |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "render"() | Renders this component to a tuple of ElementTree.Element.                                  |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "to_xml"([ | Renders this component to MusicXML, adding a version tag, but not wrapping it up as a full |
+   | pretty_pri | score.                                                                                     |
+   | nt])       |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "view_in_s | Uses the given terminal command to create a score out of this musical object, and open it  |
+   | oftware"(c | in music notation software.                                                                |
+   | ommand)    |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "wrap_as_s | Wraps this component in a "Score" so that it can be exported and viewed                    |
+   | core"()    |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+
+   -[ Attributes ]-
+
+   +------------+--------------------------------------------------------------------------------------------+
+   | "size"     |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+
+   property size: int
+
+   render_direction_type() -> Sequence[Element]
+
+      Renders the <direction-type> element that constitutes the main
+      substance of a <direction> element.
+
+   export_to_file(file_path: str, pretty_print: bool = True) -> None
+
+      Exports this musical object (wrapped as a score) to the given
+      file path.
+
+      Parameters:
+         * **file_path** -- The path of the file we want to write to.
+
+         * **pretty_print** -- If True, breaks the MusicXML onto
+           multiple lines, with indentation
+
+   render() -> Sequence[Element]
+
+      Renders this component to a tuple of ElementTree.Element. (The
+      reason for making it a tuple is that musical objects like chords
+      are represented by several notes side by side, with all but the
+      first containing a </chord> tag.)
+
+   to_xml(pretty_print: bool = False) -> str
+
+      Renders this component to MusicXML, adding a version tag, but
+      not wrapping it up as a full score.
+
+      Parameters:
+         **pretty_print** -- If True, breaks the MusicXML onto
+         multiple lines, with indentation
+
+   view_in_software(command: str) -> None
+
+      Uses the given terminal command to create a score out of this
+      musical object, and open it in music notation software.
+
+      Parameters:
+         **command** -- The terminal command corresponding to the
+         software with which we want to open the score.
+
+   wrap_as_score() -> Score
+
+      Wraps this component in a "Score" so that it can be exported and
+      viewed
+
+
+======================================================================
 === FILE: pymusicxml/pymusicxml.spanners.StopPedal.txt
 ======================================================================
 
@@ -9368,8 +9647,7 @@ class pymusicxml.spanners.StopPedal(label: Any = 1, sign: bool = False, line: bo
    Stops a sustain pedal spanner.
 
    Parameters:
-      * **label** -- this should correspond to the label of the
-        associated "StartPedal"
+      * **label** -- See "NumberedSpanner".
 
       * **sign** -- whether or not to include a "*" sign
 
@@ -9475,8 +9753,7 @@ class pymusicxml.spanners.StopSlur(label: Any = 1)
    Notation to attach to a note that ends a slur
 
    Parameters:
-      **label** -- this should correspond to the slur label of the
-      associated "StartSlur".
+      **label** -- See "NumberedSpanner".
 
    -[ Methods ]-
 
@@ -9561,8 +9838,7 @@ class pymusicxml.spanners.StopTrill(label: Any = 1, placement: StaffPlacement | 
    Stops a trill spanner with a wavy line.
 
    Parameters:
-      * **label** -- this should correspond to the label of the
-        associated "StartTrill"
+      * **label** -- See "NumberedSpanner".
 
       * **placement** -- Where to place the direction in relation to
         the staff ("above" or "below")
@@ -9675,6 +9951,12 @@ in the score, such as slurs, brackets, hairpins, etc.)
 | spread,    |                                                                                            |
 | ...])      |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
+| "StartOcta | Start of an octave-shift line, i.e. an "8va"/"8vb"/"15ma" bracket with a dashed line and   |
+| veLine"([l | terminal hook.                                                                             |
+| abel,      |                                                                                            |
+| octaves,   |                                                                                            |
+| ...])      |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
 | "StartPeda | Start of a sustain pedal spanner.                                                          |
 | l"([label, |                                                                                            |
 | sign,      |                                                                                            |
@@ -9708,6 +9990,13 @@ in the score, such as slurs, brackets, hairpins, etc.)
 | "StopHairp | Notation to attach to a note that ends a hairpin                                           |
 | in"([label |                                                                                            |
 | , spread,  |                                                                                            |
+| placement, |                                                                                            |
+| ...])      |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "StopOctav | End of an octave-shift line (e.g. the end of an "8va" or "8vb").                           |
+| eLine"([la |                                                                                            |
+| bel,       |                                                                                            |
+| octaves,   |                                                                                            |
 | placement, |                                                                                            |
 | ...])      |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
@@ -9802,6 +10091,28 @@ in the score, such as slurs, brackets, hairpins, etc.)
     * "StartHairpin.view_in_software()"
 
     * "StartHairpin.wrap_as_score()"
+
+* pymusicxml.spanners.StartOctaveLine
+
+  * "StartOctaveLine"
+
+    * "StartOctaveLine.STOP_TYPE"
+
+    * "StartOctaveLine.size"
+
+    * "StartOctaveLine.render_direction_type()"
+
+    * "StartOctaveLine.MID_TYPES"
+
+    * "StartOctaveLine.export_to_file()"
+
+    * "StartOctaveLine.render()"
+
+    * "StartOctaveLine.to_xml()"
+
+    * "StartOctaveLine.view_in_software()"
+
+    * "StartOctaveLine.wrap_as_score()"
 
 * pymusicxml.spanners.StartPedal
 
@@ -9906,6 +10217,24 @@ in the score, such as slurs, brackets, hairpins, etc.)
     * "StopHairpin.view_in_software()"
 
     * "StopHairpin.wrap_as_score()"
+
+* pymusicxml.spanners.StopOctaveLine
+
+  * "StopOctaveLine"
+
+    * "StopOctaveLine.size"
+
+    * "StopOctaveLine.render_direction_type()"
+
+    * "StopOctaveLine.export_to_file()"
+
+    * "StopOctaveLine.render()"
+
+    * "StopOctaveLine.to_xml()"
+
+    * "StopOctaveLine.view_in_software()"
+
+    * "StopOctaveLine.wrap_as_score()"
 
 * pymusicxml.spanners.StopPedal
 
@@ -10765,6 +11094,8 @@ added.
 
       * "KeySignature.render()"
 
+      * "KeySignature.step_alterations()"
+
       * "KeySignature.wrap_as_score()"
 
       * "KeySignature.export_to_file()"
@@ -10880,6 +11211,8 @@ added.
       * "NonTraditionalKeySignature.add_alteration()"
 
       * "NonTraditionalKeySignature.render()"
+
+      * "NonTraditionalKeySignature.step_alterations()"
 
       * "NonTraditionalKeySignature.export_to_file()"
 
@@ -11045,6 +11378,8 @@ added.
 
       * "Pitch.render()"
 
+      * "Pitch.accidental_name"
+
       * "Pitch.wrap_as_score()"
 
       * "Pitch.export_to_file()"
@@ -11130,6 +11465,8 @@ added.
     * "TraditionalKeySignature"
 
       * "TraditionalKeySignature.render()"
+
+      * "TraditionalKeySignature.step_alterations()"
 
       * "TraditionalKeySignature.export_to_file()"
 
@@ -11283,6 +11620,28 @@ added.
 
       * "StartHairpin.wrap_as_score()"
 
+  * pymusicxml.spanners.StartOctaveLine
+
+    * "StartOctaveLine"
+
+      * "StartOctaveLine.STOP_TYPE"
+
+      * "StartOctaveLine.size"
+
+      * "StartOctaveLine.render_direction_type()"
+
+      * "StartOctaveLine.MID_TYPES"
+
+      * "StartOctaveLine.export_to_file()"
+
+      * "StartOctaveLine.render()"
+
+      * "StartOctaveLine.to_xml()"
+
+      * "StartOctaveLine.view_in_software()"
+
+      * "StartOctaveLine.wrap_as_score()"
+
   * pymusicxml.spanners.StartPedal
 
     * "StartPedal"
@@ -11386,6 +11745,24 @@ added.
       * "StopHairpin.view_in_software()"
 
       * "StopHairpin.wrap_as_score()"
+
+  * pymusicxml.spanners.StopOctaveLine
+
+    * "StopOctaveLine"
+
+      * "StopOctaveLine.size"
+
+      * "StopOctaveLine.render_direction_type()"
+
+      * "StopOctaveLine.export_to_file()"
+
+      * "StopOctaveLine.render()"
+
+      * "StopOctaveLine.to_xml()"
+
+      * "StopOctaveLine.view_in_software()"
+
+      * "StopOctaveLine.wrap_as_score()"
 
   * pymusicxml.spanners.StopPedal
 
@@ -11707,6 +12084,12 @@ added.
 | spread,    |                                                                                            |
 | ...])      |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
+| "StartOcta | Start of an octave-shift line, i.e. an "8va"/"8vb"/"15ma" bracket with a dashed line and   |
+| veLine"([l | terminal hook.                                                                             |
+| abel,      |                                                                                            |
+| octaves,   |                                                                                            |
+| ...])      |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
 | "StartPeda | Start of a sustain pedal spanner.                                                          |
 | l"([label, |                                                                                            |
 | sign,      |                                                                                            |
@@ -11740,6 +12123,13 @@ added.
 | "StopHairp | Notation to attach to a note that ends a hairpin                                           |
 | in"([label |                                                                                            |
 | , spread,  |                                                                                            |
+| placement, |                                                                                            |
+| ...])      |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "StopOctav | End of an octave-shift line (e.g. the end of an "8va" or "8vb").                           |
+| eLine"([la |                                                                                            |
+| bel,       |                                                                                            |
+| octaves,   |                                                                                            |
 | placement, |                                                                                            |
 | ...])      |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+

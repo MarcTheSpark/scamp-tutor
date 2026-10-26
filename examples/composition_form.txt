@@ -1,7 +1,7 @@
 
 
 ======================================================================
-=== FILE: Composition & form/Algorithmic approaches/conway.py
+=== FILE: scamp_extensions:Composition & form/Algorithmic approaches/conway.py
 ======================================================================
 
 #  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
@@ -178,81 +178,7 @@ if __name__ == "__main__":
     main()
 
 ======================================================================
-=== FILE: Composition & form/Algorithmic approaches/indispensibility_example.py
-======================================================================
-
-"""
-SCAMP Example: Indispensability
-
-Mouse position controls a rhythmic texture based on Barlow's beat indispensability (barlicity extension).
-"""
-
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
-#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
-#                                                                                                #
-#  This program is free software: you can redistribute it and/or modify it under the terms of    #
-#  the GNU General Public License as published by the Free Software Foundation, either version   #
-#  3 of the License, or (at your option) any later version.                                      #
-#                                                                                                #
-#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
-#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
-#  See the GNU General Public License for more details.                                          #
-#                                                                                                #
-#  You should have received a copy of the GNU General Public License along with this program.    #
-#  If not, see <http://www.gnu.org/licenses/>.                                                   #
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-
-from scamp import *
-from scamp_extensions.composers.barlicity import *
-import random
-
-
-threshold = 0
-syncopation_chance = 0
-
-
-def mouse_move(x, y):
-    global threshold, syncopation_chance
-    syncopation_chance = x
-    threshold = y
-
-
-s = Session()
-
-s.register_mouse_listener(on_move=mouse_move, relative_coordinates=True)
-
-drum = s.new_part("taiko", (0, 116), num_channels=150)
-violin = s.new_part("violin")
-
-indispensibilities = get_indispensability_array(((2, 3), 2, 3, (2, 3), (2, 3, 2), (3, 2, 3, 3)), True)  # (5, 7), (7, 11)
-
-handle = None
-pitch = None
-
-while True:
-    for indispensibility in indispensibilities:
-        if indispensibility > 0.9:
-            if handle is None:
-                pitch = 65 + (1 - threshold) * 25
-                handle = violin.start_note(pitch, 0.8)
-            elif random.random() < 0.6:
-                handle.end()
-                handle = None
-        elif handle is not None:
-            handle.change_pitch(pitch + (1 - indispensibility) * random.uniform(-syncopation_chance * 15, syncopation_chance * 15), 0.15)
-
-        if random.random() < syncopation_chance:
-            indispensibility = 1 - indispensibility
-        if indispensibility > threshold:
-            drum.play_note(40 + int(80 * (1 - indispensibility)),
-                           0.5 + 0.5 * (indispensibility - threshold) / (1 - threshold), 0.1)
-        else:
-            wait(0.1)
-
-
-======================================================================
-=== FILE: Composition & form/Algorithmic approaches/l_system_example.py
+=== FILE: scamp_extensions:Composition & form/Algorithmic approaches/l_system_example.py
 ======================================================================
 
 """
@@ -355,7 +281,309 @@ for generation in range(6):
 
 
 ======================================================================
-=== FILE: Composition & form/Larger-scale form/evanstein_barlicity.py
+=== FILE: scamp_extensions:Composition & form/Algorithmic approaches/indispensibility_example.py
+======================================================================
+
+"""
+SCAMP Example: Indispensability
+
+Mouse position controls a rhythmic texture based on Barlow's beat indispensability (barlicity extension).
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.composers.barlicity import *
+import random
+
+
+threshold = 0
+syncopation_chance = 0
+
+
+def mouse_move(x, y):
+    global threshold, syncopation_chance
+    syncopation_chance = x
+    threshold = y
+
+
+s = Session()
+
+s.register_mouse_listener(on_move=mouse_move, relative_coordinates=True)
+
+drum = s.new_part("taiko", (0, 116), num_channels=150)
+violin = s.new_part("violin")
+
+indispensibilities = get_indispensability_array(((2, 3), 2, 3, (2, 3), (2, 3, 2), (3, 2, 3, 3)), True)  # (5, 7), (7, 11)
+
+handle = None
+pitch = None
+
+while True:
+    for indispensibility in indispensibilities:
+        if indispensibility > 0.9:
+            if handle is None:
+                pitch = 65 + (1 - threshold) * 25
+                handle = violin.start_note(pitch, 0.8)
+            elif random.random() < 0.6:
+                handle.end()
+                handle = None
+        elif handle is not None:
+            handle.change_pitch(pitch + (1 - indispensibility) * random.uniform(-syncopation_chance * 15, syncopation_chance * 15), 0.15)
+
+        if random.random() < syncopation_chance:
+            indispensibility = 1 - indispensibility
+        if indispensibility > threshold:
+            drum.play_note(40 + int(80 * (1 - indispensibility)),
+                           0.5 + 0.5 * (indispensibility - threshold) / (1 - threshold), 0.1)
+        else:
+            wait(0.1)
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/leaf_loops.py
+======================================================================
+
+"""
+SCAMP Example: Leaf Loops
+
+Generative process behind Marc Evanstein's "Leaf Loops" for violin and viola. The shapes, note attack points,
+and worm shape for several different leaves are found in the LeafPoints directory.
+"""
+
+import pygame
+import json
+import math
+import numpy as np
+from shapely.geometry import LineString
+from scamp import *
+from scamp_extensions.pitch import Scale
+import random
+
+# ---------------------------------- Parameters -------------------------------------
+
+WHICH_LEAF = "LeafPoints/dwarfBirch"
+INSTRUMENT = "Vibraphone"
+WORM_SPEED = 0.4
+ROTATION_SPEED = 3  # Adjusted speed for leaf rotation
+PITCH_RANGE = 30, 100
+
+# SCALE = Scale.blues(34)
+# SCALE = Scale.chromatic(64)
+# SCALE = Scale.diatonic(55)
+SCALE = Scale.from_pitches([40, 45, 47, 50, 52, 55, 55.86, 57, 59, 60.86, 61.69, 62,
+                            64, 65.86, 66.69, 67, 69, 70.86, 71.69, 74, 76.69, 79], cycle=False)
+
+
+# ---------------------------------- Music Setup -------------------------------------
+
+
+s = Session().run_as_server()
+
+# vibes = s.new_midi_part(INSTRUMENT, "MIDI Through Port 1", note_on_and_off_only=True)
+vibes = s.new_part(INSTRUMENT, "vibraphone", note_on_and_off_only=True)
+
+
+def get_pitch_from_length(dist):
+    return SCALE.round(
+        PITCH_RANGE[1] - dist * (PITCH_RANGE[1] - PITCH_RANGE[0])
+    )
+
+# ----------------------------------- Animation ---------------------------------------
+
+WIDTH = 1200
+DOT_WIDTH = 18
+NOTE_LINE_WIDTH = 9
+LEAF_OUTLINE_LINE_WIDTH = 6
+LEAF_MINER_LINE_WIDTH = 10
+PLAYBACK_DOT_SWELL_FACTOR = 2
+PLAYBACK_DOT_SWELL_DECAY_FACTOR = 0.92
+
+# Load configurations
+def load_json(filepath):
+    with open(filepath, 'r') as f:
+        return json.load(f)
+    
+    
+# Load the leaf ring, worm curve, and attack points
+leaf_ring_coords = load_json(f"{WHICH_LEAF}.json")
+try:
+    worm_curve_coords = load_json(f"{WHICH_LEAF}Worm.json")
+except FileNotFoundError:
+    worm_curve_coords = [[0.5, 0.5], [0.50001, 0.50001]]
+
+# Convert to shapely LineString for interpolation
+leaf_ring = LineString(leaf_ring_coords)
+worm_curve = LineString(worm_curve_coords)
+# worm_curve = LineString([(0.5, 0.8), (0.5, 0.8001)])
+
+
+attack_points = load_json(f"{WHICH_LEAF}AttackPoints.json")
+#attack_points = [leaf_ring.length * (i + 1)/ 400 for i in range(400)]
+
+
+# Initialize Pygame
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, WIDTH))
+pygame.display.set_caption('Leaf Animation')
+clock = pygame.time.Clock()
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (19, 19, 19)
+LEAF_COLOR = (0, 0, 255)
+WORM_COLOR = (255, 0, 0)
+LINE_COLOR = (0, 128, 0)
+
+start_time = pygame.time.get_ticks()
+leaf_progress = 0
+worm_progress = 0
+next_attack_idx = 0
+
+playback_dot_swell_factor = 1
+
+
+def render_bg_surface(upscale_factor=4):
+    surface = pygame.Surface((WIDTH * upscale_factor, WIDTH * upscale_factor), pygame.SRCALPHA)
+    
+    # Draw leaf and worm paths
+    pygame.draw.lines(surface, WHITE, True, [(int(x * WIDTH* upscale_factor), int(y * WIDTH* upscale_factor))
+                                             for x, y in leaf_ring_coords], LEAF_OUTLINE_LINE_WIDTH * upscale_factor)
+    pygame.draw.lines(surface, (100, 100, 100), False, [(int(x * WIDTH* upscale_factor), int(y * WIDTH* upscale_factor))
+                                                        for x, y in worm_curve_coords], LEAF_MINER_LINE_WIDTH * upscale_factor)
+
+    return pygame.transform.smoothscale(surface, (WIDTH, WIDTH))
+
+
+leaf_bg = render_bg_surface(4)
+    
+    
+def play_note():
+    global playback_dot_swell_factor
+    playback_dot_swell_factor = PLAYBACK_DOT_SWELL_FACTOR
+    vibes.end_all_notes()
+    pitch = get_pitch_from_length(math.hypot(
+        (worm_position[0] - leaf_position[0]), (worm_position[1] - leaf_position[1])
+    )) 
+    vibes.start_note(pitch, random.uniform(0.5, 0.9))
+
+
+# Main loop
+running = True
+while running:
+    screen.fill(BLACK)
+    current_time = (pygame.time.get_ticks() - start_time) / 1000  # In seconds
+
+    # Update positions on leaf and worm paths
+    leaf_progress = (leaf_progress + ROTATION_SPEED * clock.get_time() / 1000) % leaf_ring.length
+    worm_progress = (worm_progress + WORM_SPEED * clock.get_time() / 1000) % worm_curve.length
+
+    # Leaf position on leaf ring
+    leaf_position = leaf_ring.interpolate(leaf_progress).coords[0]
+    leaf_pos = (int(leaf_position[0] * WIDTH), int(leaf_position[1] * WIDTH))
+
+    # Worm position on worm curve
+    worm_position = worm_curve.interpolate(worm_progress).coords[0]
+    worm_pos = (int(worm_position[0] * WIDTH), int(worm_position[1] * WIDTH))
+
+    # Draw background
+    screen.blit(leaf_bg, (0, 0))
+
+    # Draw line between leaf and worm
+    pygame.draw.line(screen, LINE_COLOR, leaf_pos, worm_pos, NOTE_LINE_WIDTH)
+    
+    # Draw dots for leaf and worm positions
+    pygame.draw.circle(screen, LEAF_COLOR, leaf_pos, DOT_WIDTH * playback_dot_swell_factor)
+    pygame.draw.circle(screen, WORM_COLOR, worm_pos, DOT_WIDTH)
+
+    # Check if we crossed an attack point
+    attack_point = attack_points[next_attack_idx]
+    if abs(leaf_progress - attack_point) < ROTATION_SPEED * 0.05:
+        # Trigger a visual effect (e.g., change colors or line width)
+        next_attack_idx = (next_attack_idx + 1) % len(attack_points)
+        play_note()
+
+    # Event handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    if playback_dot_swell_factor > 1:
+        playback_dot_swell_factor = max(PLAYBACK_DOT_SWELL_DECAY_FACTOR * playback_dot_swell_factor, 1)
+        
+    pygame.display.flip()
+    clock.tick(60)  # Cap to 60 FPS
+
+pygame.quit()
+
+======================================================================
+=== FILE: scamp:Composition & form/Larger-scale form/reich_piano_phase.py
+======================================================================
+
+"""
+SCAMP Example: Piano Phase
+
+Steve Reich's Piano Phase: the same figure forked at 100 vs. 98 BPM, transcribed on one clock.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+session = Session()
+
+piano1 = session.new_part("Piano")
+piano2 = session.new_part("Piano")
+
+pitches = [64, 66, 71, 73, 74, 66, 64, 73, 71, 66, 74, 73]
+
+
+def piano_part(which_piano):
+    while True:
+        for pitch in pitches:
+            which_piano.play_note(pitch, 1.0, 0.25)
+
+
+clock1 = session.fork(piano_part, args=(piano1,), initial_tempo=100)
+clock2 = session.fork(piano_part, args=(piano2,), initial_tempo=98)
+
+session.start_transcribing(clock=clock1)
+session.wait(30)
+
+performance = session.stop_transcribing()
+performance.to_score(QuantizationScheme.from_time_signature("3/4", 16)).show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evanstein_barlicity.py
 ======================================================================
 
 """
@@ -653,7 +881,357 @@ app.exec_()
 
 
 ======================================================================
-=== FILE: Composition & form/Larger-scale form/evanstein_lunar_trajectories.py
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/Crackler.scd
+======================================================================
+
+MarcUtilities.setOutputLimiter(0.5, globalMul: 0.3)
+
+(
+ScampUtils.instrumentFromSynthDef(
+	SynthDef(\superInst, { |freq=440, volume=0, gate=1, crackliness=0, spread=0, pan=0|
+		var synth = Mix.fill(5, { |k|
+			Pan2.ar(
+				SinOsc.ar(
+					freq * spread.linlin(0, 1, 1.0, 0.8).pow(k-2) * LFNoise1.ar(crackliness.linlin(0, 1, 30, 100), crackliness.linlin(0, 1, 0, 0.2), 1),
+					crackliness.linexp(0, 1, 1, 300)
+				) * EnvGen.kr(Env.perc(
+					attackTime: crackliness.linexp(0, 1, 0.02, 0.01),
+					releaseTime:crackliness.linlin(0, 1, 0.2, 0.01)),
+				gate: Impulse.kr(40)),
+				k.linlin(0, 5, -1, 1)
+			)
+		});
+		var panned_out = volume * synth * EnvGen.ar(Env.adsr, gate: gate, doneAction: 2) * Pan2.ar(DC.ar(1), pan);
+		Out.ar(0, panned_out);
+	});
+)
+)
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/definitions.py
+======================================================================
+
+"""
+SCAMP Example: Evolving Form Definitions
+
+Shared dynamics envelopes and bar-line helpers for evolving_form.py.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+# playback_settings.adjustments.set("staccato", "length * 0.3")
+
+forte_piano = Envelope(
+    [0.8, 0.4, 1.0], [0.2, 0.8], curve_shapes=[0, 3]
+)
+
+diminuendo = Envelope.from_levels([0.8, 0.3])
+
+
+def wrap_in_range(value, low, high):
+    return (value - low) % (high - low) + low
+
+
+bar_lines = []
+
+
+def do_bar_line(beat):
+    beats_since_last_bar_line = beat - bar_lines[-1] if len(bar_lines) > 0 else beat
+    if beats_since_last_bar_line % 1 == 0 and beats_since_last_bar_line < 5:
+        bar_lengths = [beats_since_last_bar_line]
+    else:
+        num_bars_to_add = 2
+        while beats_since_last_bar_line / num_bars_to_add > 4:
+            num_bars_to_add += 1
+        last_bar_length = round(beats_since_last_bar_line / num_bars_to_add)
+        remaining_bars_length = beats_since_last_bar_line - last_bar_length
+        if remaining_bars_length <= 5:
+            bar_lengths = [remaining_bars_length, last_bar_length]
+        else:
+            first_bar_length = remaining_bars_length % 3 + 3 if remaining_bars_length % 3 < 2 else remaining_bars_length % 3
+            bar_lengths = [first_bar_length] + [3] * int((remaining_bars_length - first_bar_length) / 3) + [last_bar_length]
+    for bar_length in bar_lengths:
+        bar_lines.append(bar_lines[-1] + bar_length if len(bar_lines) > 0 else bar_length)
+
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/evolving_form.py
+======================================================================
+
+"""
+SCAMP Example: Evolving Form
+
+The main script for the piece, drawing upon definitions.py and formal_parameters.py.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.pitch import Scale
+from definitions import *
+from formal_parameters import *
+from random import random, choice, uniform, seed
+
+seed(0)
+s = Session()
+
+cello = s.new_part("cello")
+pianoteq = s.new_midi_part("pianoteq", midi_output_device="IAC")
+supercollider_instrument = s.new_osc_part("superInst", 57120, "127.0.0.1")
+
+s.set_tempo_targets([150, 60],
+                    [Moment.after_time(TOTAL_LENGTH * 0.618), Moment.after_time(TOTAL_LENGTH)])
+
+s.start_transcribing()
+
+interval = 1
+cello_pitch = 48
+
+
+def pianoteq_upbeat():
+    start_pitch = 72 + cello_pitch % 12
+    end_pitch = 72 + (cello_pitch + interval) % 12
+    if end_pitch < start_pitch:
+        end_pitch += 12
+    for i, p in enumerate([start_pitch + uniform(-k, k) for k in range(7)]):
+        pianoteq.play_note(p, 0.3 + 0.1 * i, 0.5/7)
+    
+    set_rate_target(pianoteq_gesture_rit_factor.value_at(s.time), Moment.after_beats(15))
+    p = end_pitch
+    volume = 1.0
+    pianoteq.play_note(p, volume, 0.375)
+    for _ in range(int(pianoteq_gesture_length.value_at(s.time))):
+        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
+        degree = round(scale.pitch_to_degree(p))
+        pianoteq.play_note(scale.degree_to_pitch(degree - 4), volume, 0.125)
+        pianoteq.play_note(scale.degree_to_pitch(degree - 3), volume, 0.375)
+        volume *= 0.8
+        p = scale.degree_to_pitch(degree - 3)
+        
+
+def pianoteq_filler():
+    p = 60
+    while random() < pianoteq_filler_probability.value_at(s.time):
+        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
+        degree = round(scale.pitch_to_degree(p))
+        if p == 60:
+            wait(1/5)
+        for i in range(4):
+            pianoteq.play_chord([scale.degree_to_pitch(degree + 2*i),
+                                 scale.degree_to_pitch(degree + 2*i + 3)],
+                                0.6 + 0.1*i, 1/5, "staccatissimo")
+        if p != 60 and random() < pianoteq_filler_probability.value_at(s.time):
+            pianoteq.play_chord([scale.degree_to_pitch(degree + 4),
+                                 scale.degree_to_pitch(degree + 9),
+                                 scale.degree_to_pitch(degree + 11)],
+                                1.0, 1/5, "staccatissimo")
+        else:
+            wait(1/5)
+        p = wrap_in_range(p + 6, 62, 92)
+
+
+def sc_gesture():
+    start_pan = uniform(-1, 1)
+    end_pan = uniform(0, 1) if start_pan < 0 else uniform(-1, 0)
+    register_ref = sc_register.value_at(s.time)
+    supercollider_instrument.play_note(
+        register_ref + cello_pitch % 12,
+        [0, 0.5], sc_gesture_length.value_at(s.time),
+        {"param_crackliness": [0, crackliness.value_at(s.time)],
+         "param_pan": start_pan}
+    )
+    supercollider_instrument.play_note(
+        [register_ref + cello_pitch % 12, register_ref + cello_pitch % 12 + 12],
+        [[0.5, 0], [1], [-4]], sc_gesture_length.value_at(s.time) * 3/2,
+        {"param_crackliness": [crackliness.value_at(s.time), 0],
+         "param_spread": [[0, 0, 0.5], [0.5, 0.5]],
+         "param_pan": end_pan}
+    )
+
+
+piano_tech_clock = None
+sc_gesture_clock = None
+
+while True:
+    if random() < cello_continue_probability.value_at(s.time):
+        if len(bar_lines) > 0 and s.beat - bar_lines[-1] > 3 and \
+                (piano_tech_clock is None or not piano_tech_clock.alive):
+            piano_tech_clock = s.fork(pianoteq_filler)
+            do_bar_line(s.beat)
+            
+        cello.play_note(cello_pitch, forte_piano, choice([1.0, 1.5]))
+    else:
+        # end condition; break and go to final note
+        if cello_pitch % 12 == 0 and s.time >= TOTAL_LENGTH:
+            break
+        if s.time > 20 and (sc_gesture_clock is None or not sc_gesture_clock.alive):
+            sc_gesture_clock = s.fork(sc_gesture)
+        cello.play_note(cello_pitch, diminuendo, choice([2.0, 2.5, 3.0]))
+        if piano_tech_clock is not None:
+            piano_tech_clock.kill()
+        wait(choice([0.5, 1.0]))
+        if s.time > 40:
+            piano_tech_clock = s.fork(pianoteq_upbeat)
+        
+        if random() < cello_staccato_probability.value_at(s.time):
+            cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
+            interval += 1
+            wait(0.25)
+            cello.play_note(cello_pitch, 0.9, 0.25, "staccato")
+        else:
+            wait(0.5)
+        do_bar_line(s.beat)
+        
+    cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
+    interval += 1
+    
+cello.play_note(36, diminuendo, [4.0])
+do_bar_line(s.beat)
+s.stop_transcribing().to_score(bar_line_locations=bar_lines, max_divisor=14).show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/formal_parameters.py
+======================================================================
+
+"""
+SCAMP Example: Formal Parameters
+
+Formal-parameter envelopes for evolving_form.py; run directly to plot them.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+TOTAL_LENGTH = 180
+
+# golden ratio durations
+gr, one_minus_gr = TOTAL_LENGTH * 0.618, TOTAL_LENGTH * (1 - 0.618)
+
+cello_continue_probability = Envelope([0.4, 1.0, 0], [gr, one_minus_gr])
+cello_staccato_probability = Envelope.from_levels([0, 1], length=TOTAL_LENGTH)
+pianoteq_gesture_length = Envelope.from_levels([0, 0, 10, 0], length=TOTAL_LENGTH)
+pianoteq_gesture_rit_factor = Envelope([0.25, 0.8, 0.1], [gr, one_minus_gr])
+pianoteq_filler_probability = Envelope([0.3, 0.97, 0.3], [gr, one_minus_gr])
+crackliness = Envelope([0.6, 1.0, 0], [gr, one_minus_gr])
+sc_gesture_length = Envelope([5, 2, 5], [gr, one_minus_gr])
+sc_register = Envelope([72, 72, 60, 60, 48, 48, 36, 36 ],
+                       [TOTAL_LENGTH * 0.7, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1])
+
+
+if __name__ == "__main__":
+    cello_continue_probability.show_plot("Cello continue probability")
+    cello_staccato_probability.show_plot("Cello staccato probability")
+    pianoteq_gesture_length.show_plot("Pianoteq gesture length")
+    pianoteq_gesture_rit_factor.show_plot("Pianoteq rit factor")
+    pianoteq_filler_probability.show_plot("Pianoteq filler probability")
+    crackliness.show_plot("SC instrument crackliness")
+    sc_gesture_length.show_plot("SC instrument gesture length")
+    sc_register.show_plot("SC instrument register")
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/time_varying_parameter_example.py
+======================================================================
+
+"""
+SCAMP Example: TimeVaryingParameter Extension
+
+A script using the context-sensitive :class:`~expenvelope.envelope.Envelope` wrapper :class:`TimeVaryingParameter`,
+which reads into the underlying envelope at the current clock   's beat or time when called.
+"""
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.utilities import TimeVaryingParameter
+
+
+s = Session()
+
+piano = s.new_part("piano")
+
+
+def play_gesture(center_pitch, width, length):
+    pitch_shape = TimeVaryingParameter.from_levels([0, width, -width, -width/2, -width, 0], length=length)
+    volume_shape = TimeVaryingParameter([1, 0.4, 1], [length * 0.1, length * 0.9])
+    while current_clock().beat < length:
+        piano.play_note(int(center_pitch + pitch_shape()), volume_shape(), 0.25)
+
+
+width_param = TimeVaryingParameter([4, 20, 0], [30, 30])
+center_pitch_param = TimeVaryingParameter([60, 80, 40, 60], [20, 20, 20])
+length_param = TimeVaryingParameter([10, 1], [60])
+
+while s.beat < 65:
+    fork(play_gesture, args=(center_pitch_param(), width_param(), length_param()), initial_tempo=180)
+    wait_for_children_to_finish()
+
+
+======================================================================
+=== FILE: scamp:Composition & form/Larger-scale form/evanstein_lunar_trajectories.py
 ======================================================================
 
 """
@@ -846,581 +1424,3 @@ s.register_midi_listener(MIDI_INPUT_DEVICE, midi_callback)
 # since everything is driven by MIDI input, we ask the session to wait forever
 # so that the program doesn't just end immediate.y
 s.wait_forever()
-
-
-======================================================================
-=== FILE: Composition & form/Larger-scale form/evolving_form/Crackler.scd
-======================================================================
-
-MarcUtilities.setOutputLimiter(0.5, globalMul: 0.3)
-
-(
-ScampUtils.instrumentFromSynthDef(
-	SynthDef(\superInst, { |freq=440, volume=0, gate=1, crackliness=0, spread=0, pan=0|
-		var synth = Mix.fill(5, { |k|
-			Pan2.ar(
-				SinOsc.ar(
-					freq * spread.linlin(0, 1, 1.0, 0.8).pow(k-2) * LFNoise1.ar(crackliness.linlin(0, 1, 30, 100), crackliness.linlin(0, 1, 0, 0.2), 1),
-					crackliness.linexp(0, 1, 1, 300)
-				) * EnvGen.kr(Env.perc(
-					attackTime: crackliness.linexp(0, 1, 0.02, 0.01),
-					releaseTime:crackliness.linlin(0, 1, 0.2, 0.01)),
-				gate: Impulse.kr(40)),
-				k.linlin(0, 5, -1, 1)
-			)
-		});
-		var panned_out = volume * synth * EnvGen.ar(Env.adsr, gate: gate, doneAction: 2) * Pan2.ar(DC.ar(1), pan);
-		Out.ar(0, panned_out);
-	});
-)
-)
-
-
-======================================================================
-=== FILE: Composition & form/Larger-scale form/evolving_form/definitions.py
-======================================================================
-
-"""
-SCAMP Example: Evolving Form Definitions
-
-Shared dynamics envelopes and bar-line helpers for evolving_form.py.
-"""
-
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
-#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
-#                                                                                                #
-#  This program is free software: you can redistribute it and/or modify it under the terms of    #
-#  the GNU General Public License as published by the Free Software Foundation, either version   #
-#  3 of the License, or (at your option) any later version.                                      #
-#                                                                                                #
-#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
-#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
-#  See the GNU General Public License for more details.                                          #
-#                                                                                                #
-#  You should have received a copy of the GNU General Public License along with this program.    #
-#  If not, see <http://www.gnu.org/licenses/>.                                                   #
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-
-from scamp import *
-
-# playback_settings.adjustments.set("staccato", "length * 0.3")
-
-forte_piano = Envelope(
-    [0.8, 0.4, 1.0], [0.2, 0.8], curve_shapes=[0, 3]
-)
-
-diminuendo = Envelope.from_levels([0.8, 0.3])
-
-
-def wrap_in_range(value, low, high):
-    return (value - low) % (high - low) + low
-
-
-bar_lines = []
-
-
-def do_bar_line(beat):
-    beats_since_last_bar_line = beat - bar_lines[-1] if len(bar_lines) > 0 else beat
-    if beats_since_last_bar_line % 1 == 0 and beats_since_last_bar_line < 5:
-        bar_lengths = [beats_since_last_bar_line]
-    else:
-        num_bars_to_add = 2
-        while beats_since_last_bar_line / num_bars_to_add > 4:
-            num_bars_to_add += 1
-        last_bar_length = round(beats_since_last_bar_line / num_bars_to_add)
-        remaining_bars_length = beats_since_last_bar_line - last_bar_length
-        if remaining_bars_length <= 5:
-            bar_lengths = [remaining_bars_length, last_bar_length]
-        else:
-            first_bar_length = remaining_bars_length % 3 + 3 if remaining_bars_length % 3 < 2 else remaining_bars_length % 3
-            bar_lengths = [first_bar_length] + [3] * int((remaining_bars_length - first_bar_length) / 3) + [last_bar_length]
-    for bar_length in bar_lengths:
-        bar_lines.append(bar_lines[-1] + bar_length if len(bar_lines) > 0 else bar_length)
-
-
-
-======================================================================
-=== FILE: Composition & form/Larger-scale form/evolving_form/evolving_form.py
-======================================================================
-
-"""
-SCAMP Example: Evolving Form
-
-The main script for the piece, drawing upon definitions.py and formal_parameters.py.
-
-"""
-
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
-#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
-#                                                                                                #
-#  This program is free software: you can redistribute it and/or modify it under the terms of    #
-#  the GNU General Public License as published by the Free Software Foundation, either version   #
-#  3 of the License, or (at your option) any later version.                                      #
-#                                                                                                #
-#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
-#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
-#  See the GNU General Public License for more details.                                          #
-#                                                                                                #
-#  You should have received a copy of the GNU General Public License along with this program.    #
-#  If not, see <http://www.gnu.org/licenses/>.                                                   #
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-
-from scamp import *
-from scamp_extensions.pitch import Scale
-from definitions import *
-from formal_parameters import *
-from random import random, choice, uniform, seed
-
-seed(0)
-s = Session()
-
-cello = s.new_part("cello")
-pianoteq = s.new_midi_part("pianoteq", midi_output_device="IAC")
-supercollider_instrument = s.new_osc_part("superInst", 57120, "127.0.0.1")
-
-s.set_tempo_targets([150, 60],
-                    [Moment.after_time(TOTAL_LENGTH * 0.618), Moment.after_time(TOTAL_LENGTH)])
-
-s.start_transcribing()
-
-interval = 1
-cello_pitch = 48
-
-
-def pianoteq_upbeat():
-    start_pitch = 72 + cello_pitch % 12
-    end_pitch = 72 + (cello_pitch + interval) % 12
-    if end_pitch < start_pitch:
-        end_pitch += 12
-    for i, p in enumerate([start_pitch + uniform(-k, k) for k in range(7)]):
-        pianoteq.play_note(p, 0.3 + 0.1 * i, 0.5/7)
-    
-    set_rate_target(pianoteq_gesture_rit_factor.value_at(s.time), Moment.after_beats(15))
-    p = end_pitch
-    volume = 1.0
-    pianoteq.play_note(p, volume, 0.375)
-    for _ in range(int(pianoteq_gesture_length.value_at(s.time))):
-        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
-        degree = round(scale.pitch_to_degree(p))
-        pianoteq.play_note(scale.degree_to_pitch(degree - 4), volume, 0.125)
-        pianoteq.play_note(scale.degree_to_pitch(degree - 3), volume, 0.375)
-        volume *= 0.8
-        p = scale.degree_to_pitch(degree - 3)
-        
-
-def pianoteq_filler():
-    p = 60
-    while random() < pianoteq_filler_probability.value_at(s.time):
-        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
-        degree = round(scale.pitch_to_degree(p))
-        if p == 60:
-            wait(1/5)
-        for i in range(4):
-            pianoteq.play_chord([scale.degree_to_pitch(degree + 2*i),
-                                 scale.degree_to_pitch(degree + 2*i + 3)],
-                                0.6 + 0.1*i, 1/5, "staccatissimo")
-        if p != 60 and random() < pianoteq_filler_probability.value_at(s.time):
-            pianoteq.play_chord([scale.degree_to_pitch(degree + 4),
-                                 scale.degree_to_pitch(degree + 9),
-                                 scale.degree_to_pitch(degree + 11)],
-                                1.0, 1/5, "staccatissimo")
-        else:
-            wait(1/5)
-        p = wrap_in_range(p + 6, 62, 92)
-
-
-def sc_gesture():
-    start_pan = uniform(-1, 1)
-    end_pan = uniform(0, 1) if start_pan < 0 else uniform(-1, 0)
-    register_ref = sc_register.value_at(s.time)
-    supercollider_instrument.play_note(
-        register_ref + cello_pitch % 12,
-        [0, 0.5], sc_gesture_length.value_at(s.time),
-        {"param_crackliness": [0, crackliness.value_at(s.time)],
-         "param_pan": start_pan}
-    )
-    supercollider_instrument.play_note(
-        [register_ref + cello_pitch % 12, register_ref + cello_pitch % 12 + 12],
-        [[0.5, 0], [1], [-4]], sc_gesture_length.value_at(s.time) * 3/2,
-        {"param_crackliness": [crackliness.value_at(s.time), 0],
-         "param_spread": [[0, 0, 0.5], [0.5, 0.5]],
-         "param_pan": end_pan}
-    )
-
-
-piano_tech_clock = None
-sc_gesture_clock = None
-
-while True:
-    if random() < cello_continue_probability.value_at(s.time):
-        if len(bar_lines) > 0 and s.beat - bar_lines[-1] > 3 and \
-                (piano_tech_clock is None or not piano_tech_clock.alive):
-            piano_tech_clock = s.fork(pianoteq_filler)
-            do_bar_line(s.beat)
-            
-        cello.play_note(cello_pitch, forte_piano, choice([1.0, 1.5]))
-    else:
-        # end condition; break and go to final note
-        if cello_pitch % 12 == 0 and s.time >= TOTAL_LENGTH:
-            break
-        if s.time > 20 and (sc_gesture_clock is None or not sc_gesture_clock.alive):
-            sc_gesture_clock = s.fork(sc_gesture)
-        cello.play_note(cello_pitch, diminuendo, choice([2.0, 2.5, 3.0]))
-        if piano_tech_clock is not None:
-            piano_tech_clock.kill()
-        wait(choice([0.5, 1.0]))
-        if s.time > 40:
-            piano_tech_clock = s.fork(pianoteq_upbeat)
-        
-        if random() < cello_staccato_probability.value_at(s.time):
-            cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
-            interval += 1
-            wait(0.25)
-            cello.play_note(cello_pitch, 0.9, 0.25, "staccato")
-        else:
-            wait(0.5)
-        do_bar_line(s.beat)
-        
-    cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
-    interval += 1
-    
-cello.play_note(36, diminuendo, [4.0])
-do_bar_line(s.beat)
-s.stop_transcribing().to_score(bar_line_locations=bar_lines, max_divisor=14).show()
-
-
-======================================================================
-=== FILE: Composition & form/Larger-scale form/evolving_form/formal_parameters.py
-======================================================================
-
-"""
-SCAMP Example: Formal Parameters
-
-Formal-parameter envelopes for evolving_form.py; run directly to plot them.
-
-"""
-
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
-#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
-#                                                                                                #
-#  This program is free software: you can redistribute it and/or modify it under the terms of    #
-#  the GNU General Public License as published by the Free Software Foundation, either version   #
-#  3 of the License, or (at your option) any later version.                                      #
-#                                                                                                #
-#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
-#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
-#  See the GNU General Public License for more details.                                          #
-#                                                                                                #
-#  You should have received a copy of the GNU General Public License along with this program.    #
-#  If not, see <http://www.gnu.org/licenses/>.                                                   #
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-
-from scamp import *
-
-TOTAL_LENGTH = 180
-
-# golden ratio durations
-gr, one_minus_gr = TOTAL_LENGTH * 0.618, TOTAL_LENGTH * (1 - 0.618)
-
-cello_continue_probability = Envelope([0.4, 1.0, 0], [gr, one_minus_gr])
-cello_staccato_probability = Envelope.from_levels([0, 1], length=TOTAL_LENGTH)
-pianoteq_gesture_length = Envelope.from_levels([0, 0, 10, 0], length=TOTAL_LENGTH)
-pianoteq_gesture_rit_factor = Envelope([0.25, 0.8, 0.1], [gr, one_minus_gr])
-pianoteq_filler_probability = Envelope([0.3, 0.97, 0.3], [gr, one_minus_gr])
-crackliness = Envelope([0.6, 1.0, 0], [gr, one_minus_gr])
-sc_gesture_length = Envelope([5, 2, 5], [gr, one_minus_gr])
-sc_register = Envelope([72, 72, 60, 60, 48, 48, 36, 36 ],
-                       [TOTAL_LENGTH * 0.7, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1])
-
-
-if __name__ == "__main__":
-    cello_continue_probability.show_plot("Cello continue probability")
-    cello_staccato_probability.show_plot("Cello staccato probability")
-    pianoteq_gesture_length.show_plot("Pianoteq gesture length")
-    pianoteq_gesture_rit_factor.show_plot("Pianoteq rit factor")
-    pianoteq_filler_probability.show_plot("Pianoteq filler probability")
-    crackliness.show_plot("SC instrument crackliness")
-    sc_gesture_length.show_plot("SC instrument gesture length")
-    sc_register.show_plot("SC instrument register")
-
-
-======================================================================
-=== FILE: Composition & form/Larger-scale form/leaf_loops.py
-======================================================================
-
-"""
-SCAMP Example: Leaf Loops
-
-Generative process behind Marc Evanstein's "Leaf Loops" for violin and viola. The shapes, note attack points,
-and worm shape for several different leaves are found in the LeafPoints directory.
-"""
-
-import pygame
-import json
-import math
-import numpy as np
-from shapely.geometry import LineString
-from scamp import *
-from scamp_extensions.pitch import Scale
-import random
-
-# ---------------------------------- Parameters -------------------------------------
-
-WHICH_LEAF = "LeafPoints/larkSpur"
-INSTRUMENT = "Vibraphone"
-WORM_SPEED = 0.04
-ROTATION_SPEED = 0.8  # Adjusted speed for leaf rotation
-PITCH_RANGE = 30, 100
-
-SCALE = Scale.blues(34)
-# SCALE = Scale.chromatic(64)
-# SCALE = Scale.diatonic(55)
-# SCALE = Scale.from_pitches([40, 45, 47, 50, 52, 55, 55.86, 57, 59, 60.86, 61.69, 62,
-#                             64, 65.86, 66.69, 67, 69, 70.86, 71.69, 74, 76.69, 79], cycle=False)
-
-
-# ---------------------------------- Music Setup -------------------------------------
-
-
-s = Session().run_as_server()
-
-# vibes = s.new_midi_part(INSTRUMENT, "MIDI Through Port 1", note_on_and_off_only=True)
-vibes = s.new_part(INSTRUMENT, "vibraphone", note_on_and_off_only=True)
-
-
-def get_pitch_from_length(dist):
-    return SCALE.round(
-        PITCH_RANGE[1] - dist * (PITCH_RANGE[1] - PITCH_RANGE[0])
-    )
-
-# ----------------------------------- Animation ---------------------------------------
-
-WIDTH = 1200
-DOT_WIDTH = 18
-NOTE_LINE_WIDTH = 9
-LEAF_OUTLINE_LINE_WIDTH = 6
-LEAF_MINER_LINE_WIDTH = 10
-PLAYBACK_DOT_SWELL_FACTOR = 2
-PLAYBACK_DOT_SWELL_DECAY_FACTOR = 0.92
-
-# Load configurations
-def load_json(filepath):
-    with open(filepath, 'r') as f:
-        return json.load(f)
-    
-    
-# Load the leaf ring, worm curve, and attack points
-leaf_ring_coords = load_json(f"{WHICH_LEAF}.json")
-try:
-    worm_curve_coords = load_json(f"{WHICH_LEAF}Worm.json")
-except FileNotFoundError:
-    worm_curve_coords = [[0.5, 0.5], [0.50001, 0.50001]]
-
-# Convert to shapely LineString for interpolation
-leaf_ring = LineString(leaf_ring_coords)
-worm_curve = LineString(worm_curve_coords)
-# worm_curve = LineString([(0.5, 0.8), (0.5, 0.8001)])
-
-
-attack_points = load_json(f"{WHICH_LEAF}AttackPoints.json")
-#attack_points = [leaf_ring.length * (i + 1)/ 400 for i in range(400)]
-
-
-# Initialize Pygame
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, WIDTH))
-pygame.display.set_caption('Leaf Animation')
-clock = pygame.time.Clock()
-
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (19, 19, 19)
-LEAF_COLOR = (0, 0, 255)
-WORM_COLOR = (255, 0, 0)
-LINE_COLOR = (0, 128, 0)
-
-start_time = pygame.time.get_ticks()
-leaf_progress = 0
-worm_progress = 0
-next_attack_idx = 0
-
-playback_dot_swell_factor = 1
-
-
-def render_bg_surface(upscale_factor=4):
-    surface = pygame.Surface((WIDTH * upscale_factor, WIDTH * upscale_factor), pygame.SRCALPHA)
-    
-    # Draw leaf and worm paths
-    pygame.draw.lines(surface, WHITE, True, [(int(x * WIDTH* upscale_factor), int(y * WIDTH* upscale_factor))
-                                             for x, y in leaf_ring_coords], LEAF_OUTLINE_LINE_WIDTH * upscale_factor)
-    pygame.draw.lines(surface, (100, 100, 100), False, [(int(x * WIDTH* upscale_factor), int(y * WIDTH* upscale_factor))
-                                                        for x, y in worm_curve_coords], LEAF_MINER_LINE_WIDTH * upscale_factor)
-
-    return pygame.transform.smoothscale(surface, (WIDTH, WIDTH))
-
-
-leaf_bg = render_bg_surface(4)
-    
-    
-def play_note():
-    global playback_dot_swell_factor
-    playback_dot_swell_factor = PLAYBACK_DOT_SWELL_FACTOR
-    vibes.end_all_notes()
-    pitch = get_pitch_from_length(math.hypot(
-        (worm_position[0] - leaf_position[0]), (worm_position[1] - leaf_position[1])
-    )) 
-    vibes.start_note(pitch, random.uniform(0.5, 0.9))
-
-
-# Main loop
-running = True
-while running:
-    screen.fill(BLACK)
-    current_time = (pygame.time.get_ticks() - start_time) / 1000  # In seconds
-
-    # Update positions on leaf and worm paths
-    leaf_progress = (leaf_progress + ROTATION_SPEED * clock.get_time() / 1000) % leaf_ring.length
-    worm_progress = (worm_progress + WORM_SPEED * clock.get_time() / 1000) % worm_curve.length
-
-    # Leaf position on leaf ring
-    leaf_position = leaf_ring.interpolate(leaf_progress).coords[0]
-    leaf_pos = (int(leaf_position[0] * WIDTH), int(leaf_position[1] * WIDTH))
-
-    # Worm position on worm curve
-    worm_position = worm_curve.interpolate(worm_progress).coords[0]
-    worm_pos = (int(worm_position[0] * WIDTH), int(worm_position[1] * WIDTH))
-
-    # Draw background
-    screen.blit(leaf_bg, (0, 0))
-
-    # Draw line between leaf and worm
-    pygame.draw.line(screen, LINE_COLOR, leaf_pos, worm_pos, NOTE_LINE_WIDTH)
-    
-    # Draw dots for leaf and worm positions
-    pygame.draw.circle(screen, LEAF_COLOR, leaf_pos, DOT_WIDTH * playback_dot_swell_factor)
-    pygame.draw.circle(screen, WORM_COLOR, worm_pos, DOT_WIDTH)
-
-    # Check if we crossed an attack point
-    attack_point = attack_points[next_attack_idx]
-    if abs(leaf_progress - attack_point) < ROTATION_SPEED * 0.05:
-        # Trigger a visual effect (e.g., change colors or line width)
-        next_attack_idx = (next_attack_idx + 1) % len(attack_points)
-        play_note()
-
-    # Event handling
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    if playback_dot_swell_factor > 1:
-        playback_dot_swell_factor = max(PLAYBACK_DOT_SWELL_DECAY_FACTOR * playback_dot_swell_factor, 1)
-        
-    pygame.display.flip()
-    clock.tick(60)  # Cap to 60 FPS
-
-pygame.quit()
-
-======================================================================
-=== FILE: Composition & form/Larger-scale form/reich_piano_phase.py
-======================================================================
-
-"""
-SCAMP Example: Piano Phase
-
-Steve Reich's Piano Phase: the same figure forked at 100 vs. 98 BPM, transcribed on one clock.
-"""
-
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
-#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
-#                                                                                                #
-#  This program is free software: you can redistribute it and/or modify it under the terms of    #
-#  the GNU General Public License as published by the Free Software Foundation, either version   #
-#  3 of the License, or (at your option) any later version.                                      #
-#                                                                                                #
-#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
-#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
-#  See the GNU General Public License for more details.                                          #
-#                                                                                                #
-#  You should have received a copy of the GNU General Public License along with this program.    #
-#  If not, see <http://www.gnu.org/licenses/>.                                                   #
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-
-from scamp import *
-
-session = Session()
-
-piano1 = session.new_part("Piano")
-piano2 = session.new_part("Piano")
-
-pitches = [64, 66, 71, 73, 74, 66, 64, 73, 71, 66, 74, 73]
-
-
-def piano_part(which_piano):
-    while True:
-        for pitch in pitches:
-            which_piano.play_note(pitch, 1.0, 0.25)
-
-
-clock1 = session.fork(piano_part, args=(piano1,), initial_tempo=100)
-clock2 = session.fork(piano_part, args=(piano2,), initial_tempo=98)
-
-session.start_transcribing(clock=clock1)
-session.wait(30)
-
-performance = session.stop_transcribing()
-performance.to_score(QuantizationScheme.from_time_signature("3/4", 16)).show()
-
-
-======================================================================
-=== FILE: Composition & form/Larger-scale form/time_varying_parameter_example.py
-======================================================================
-
-"""
-SCAMP Example: TimeVaryingParameter Example
-
-A script using the context-sensitive :class:`~expenvelope.envelope.Envelope` wrapper :class:`TimeVaryingParameter`,
-which reads into the underlying envelope at the current clock's beat or time when called.
-"""
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
-#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
-#                                                                                                #
-#  This program is free software: you can redistribute it and/or modify it under the terms of    #
-#  the GNU General Public License as published by the Free Software Foundation, either version   #
-#  3 of the License, or (at your option) any later version.                                      #
-#                                                                                                #
-#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
-#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
-#  See the GNU General Public License for more details.                                          #
-#                                                                                                #
-#  You should have received a copy of the GNU General Public License along with this program.    #
-#  If not, see <http://www.gnu.org/licenses/>.                                                   #
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-
-from scamp import *
-from scamp_extensions.utilities import TimeVaryingParameter
-
-
-s = Session()
-
-piano = s.new_part("piano")
-
-
-def play_gesture(center_pitch, width, length):
-    pitch_shape = TimeVaryingParameter.from_levels([0, width, -width, -width/2, -width, 0], length=length)
-    volume_shape = TimeVaryingParameter([1, 0.4, 1], [length * 0.1, length * 0.9])
-    while current_clock().beat < length:
-        piano.play_note(int(center_pitch + pitch_shape()), volume_shape(), 0.25)
-
-
-width_param = TimeVaryingParameter([4, 20, 0], [30, 30])
-center_pitch_param = TimeVaryingParameter([60, 80, 40, 60], [20, 20, 20])
-length_param = TimeVaryingParameter([10, 1], [60])
-
-while s.beat < 65:
-    fork(play_gesture, args=(center_pitch_param(), width_param(), length_param()), initial_tempo=180)
-    wait_for_children_to_finish()

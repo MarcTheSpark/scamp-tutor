@@ -51,7 +51,7 @@ These are large reference files. Do NOT fetch them all up front — fetch a
 file when a question actually calls for it. Every bundle concatenates many
 original files, each introduced by a header line:
 
-    === FILE: <original/relative/path>
+    === FILE: <package>:<path>   (docs bundles: just <path>)
 
 so you can always tell the user exactly which real file a snippet is
 from.
@@ -94,6 +94,7 @@ over inventing code.
   fetch whichever matches the question:
   examples/time_clocks.txt              forking, tempo, clocks
   examples/pitch.txt                    glissando, scales, microtonality, spelling
+  examples/envelopes.txt                glissandi, dynamic swells, Envelope shapes
   examples/notation_engraving.txt       notation output, quantization, engraving
   examples/playback.txt                 soundfont/MIDI/OSC, note handles, adjustments
   examples/interactivity_visualization.txt   keyboard/mouse/MIDI input, GUI

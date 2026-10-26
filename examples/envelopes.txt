@@ -1,0 +1,623 @@
+
+
+======================================================================
+=== FILE: scamp:Tutorial/12_envelopes_basic.py
+======================================================================
+
+"""
+SCAMP Example: Envelopes (basic)
+
+Create and plot two simple envelopes, one with evenly-spaced linear segments, and one with uneven, curved segments.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import Envelope
+
+e = Envelope.from_levels(
+    [60, 72, 66, 70]
+)
+e.show_plot("Evenly Spaced")
+
+e = Envelope(
+    [60, 72, 66, 70], [2, 1, 1],
+    curve_shapes=[2, -2, -2]
+)
+e.show_plot("Uneven with Shaping")
+
+
+======================================================================
+=== FILE: scamp:Tutorial/13_envelopes_advanced.py
+======================================================================
+
+"""
+SCAMP Example: Envelopes (advanced)
+
+A more comprehensive list of ways to construct and modify Envelopes.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import Envelope
+import math
+
+# Ways of constructing Envelopes
+
+envelope_from_levels_and_durations = Envelope((1.0, 0.2, 0.6, 0), (2.0, 1.0, 3.0))
+# alternative: `Envelope.from_levels_and_durations((1.0, 0.2, 0.6, 0), (2.0, 1.0, 3.0))`
+envelope_from_levels_and_durations.show_plot("Envelope from levels and durations")
+
+envelope_from_levels_and_durations_with_curve_shapes = Envelope(
+    (1.0, 0.2, 0.6, 0), (2.0, 1.0, 3.0), curve_shapes=(2, 2, -3)
+)
+# alternative: `Envelope.from_levels_and_durations((1.0, 0.2, 0.6, 0), (2.0, 1.0, 3.0), curve_shapes=(2, 2, -3))`
+envelope_from_levels_and_durations_with_curve_shapes.show_plot("Envelope with curve shapes")
+
+envelope_from_levels = Envelope.from_levels((1.0, 0.2, 0.6, 0), length=3)
+envelope_from_levels.show_plot("Envelope from levels alone")
+
+envelope_from_points = Envelope.from_points((-1, 5), (1, 6), (5, -2))
+envelope_from_points.show_plot("Envelope from points")
+
+envelope_from_points_with_curve_shapes = Envelope.from_points((-1, 5, -3), (1, 6, 2), (5, -2))
+envelope_from_points_with_curve_shapes.show_plot("Envelope from points with curve shapes")
+
+envelope_from_list1 = Envelope.from_list([3, 6, 2, 0])  # just levels
+envelope_from_list1.show_plot("Envelope from list (just levels)")
+
+envelope_from_list2 = Envelope.from_list([[3, 6, 2, 0], 7])  # levels and total duration
+envelope_from_list2.show_plot("Envelope from list (levels and total duration)")
+
+envelope_from_list3 = Envelope.from_list([[3, 6, 2, 0], [2, 0.5, 5]])  # levels and segment durations
+envelope_from_list3.show_plot("Envelope from list (levels and durations)")
+
+envelope_from_list4 = Envelope.from_list([[3, 6, 2, 0], [2, 0.5, 5], [3, 0, -3]])  # levels, durations and curve shapes
+envelope_from_list4.show_plot("Envelope from list (levels, durations and curve shapes)")
+
+envelope_from_function = Envelope.from_function(lambda x: math.sin(x), -2, 7)
+envelope_from_function.show_plot("Envelope from function (sine)")
+
+release_envelope = Envelope.release(3, curve_shape=-2)
+release_envelope.show_plot("Release envelope")
+
+attack_release_envelope = Envelope.ar(0.1, 2, release_shape=-3)
+attack_release_envelope.show_plot("Attack / release envelope")
+
+attack_sustain_release_envelope = Envelope.asr(1, 0.8, 4, 2, attack_shape=-4)
+attack_sustain_release_envelope.show_plot("ASR envelope")
+
+adsr_envelope = Envelope.adsr(0.2, 1.0, 0.3, 0.7, 3.0, 1.0, decay_shape=-2, release_shape=3)
+adsr_envelope.show_plot("ADSR envelope")
+
+# Arithmetic with Envelopes:
+# Approximates as best as possible the result of function addition / multiplication / division
+# Since the resulting functions are often not piecewise exponential, we break the result apart at local min / max
+# and points of inflection and try to fit exponentials to each of the resulting segments
+
+a = Envelope.adsr(0.2, 1.0, 0.3, 0.7, 3.0, 1.0, decay_shape=-2, release_shape=3)
+b = Envelope.adsr(0.2, 1.0, 0.3, 0.7, 3.0, 1.0, decay_shape=-2, release_shape=3).shift_horizontal(3) + 1
+((a + b) * (a - b)).show_plot("Math on envelopes #1")
+(a / b).show_plot("Math on envelopes #2")
+
+envelope_from_points_with_curve_shapes.append_envelope(envelope_from_function)
+envelope_from_points_with_curve_shapes.show_plot("Appending Envelope")
+
+attack_sustain_release_envelope.prepend_envelope(envelope_from_function)
+attack_sustain_release_envelope.show_plot("Prepending Envelope")
+
+
+======================================================================
+=== FILE: scamp:Tutorial/14_gliss_from_envelope.py
+======================================================================
+
+"""
+SCAMP Example: Glissando from Envelope
+
+Plays a glissando by passing an Envelope to the pitch parameter of play_note.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+viola = s.new_part("viola")
+
+e = Envelope(
+    [60, 72, 66, 70], [3 * 4/5, 1 * 4/5, 1 * 4/5],
+    curve_shapes=[2, -2, -2]
+)
+
+s.start_transcribing()
+
+viola.play_note(e, 1.0, 4)
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/15_envelope_shorthand.py
+======================================================================
+
+"""
+SCAMP Example: Envelope Shorthand
+
+Plays two glissandi by passing lists instead of envelopes to the pitch argument of play_note.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+viola = s.new_part("viola")
+
+s.start_transcribing()
+
+# a list of values results in evenly spaced glissando
+viola.play_note([60, 70, 55], 1.0, 4)
+
+# a list of lists can give values, durations, and (optionally) curve shapes
+# this results in segment durations of 2 and 1 and curve shapes of -2 and 0
+# NB: by default, envelopes created through list shorthand like this are
+# resized to the duration of the note, whereas Envelope objects passed directly
+# are not. So in this case, the durations of 2 and 1 get scaled up to 8/3 and 4/3
+# so that the whole envelope lasts 4 beats (the duration of the note).
+# You can change this behavior so that it resizes for Envelope objects as well,
+# or so that it never resizes, by altering playback_settings.resize_parameter_envelopes
+viola.play_note([[60, 70, 55], [2, 1], [-2, 0]], 1.0, 4)
+
+performance = s.stop_transcribing()
+performance.to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/17_volume_envelope.py
+======================================================================
+
+"""
+SCAMP Example: Volume Envelope
+
+Plots an envelope representing a forte-piano-crescendo dynamic, and then uses it to affect the dynamics of a note's
+playback. This example shows that an Envelope can be passed to the volume argument of "play_note", just like it can
+to the pitch argument. (The list short-hand also works, by the way.)
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+viola = s.new_part("viola")
+
+fp_cresc = Envelope(
+    [0.8, 0.3, 1],
+    [0.2, 3.8],
+    curve_shapes=[2, 4]
+)
+
+# plot the dynamic curve
+fp_cresc.show_plot("fp cresc.")
+
+# play a note with the dynamic curve
+viola.play_note(48, fp_cresc, 4)
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/Crackler.scd
+======================================================================
+
+MarcUtilities.setOutputLimiter(0.5, globalMul: 0.3)
+
+(
+ScampUtils.instrumentFromSynthDef(
+	SynthDef(\superInst, { |freq=440, volume=0, gate=1, crackliness=0, spread=0, pan=0|
+		var synth = Mix.fill(5, { |k|
+			Pan2.ar(
+				SinOsc.ar(
+					freq * spread.linlin(0, 1, 1.0, 0.8).pow(k-2) * LFNoise1.ar(crackliness.linlin(0, 1, 30, 100), crackliness.linlin(0, 1, 0, 0.2), 1),
+					crackliness.linexp(0, 1, 1, 300)
+				) * EnvGen.kr(Env.perc(
+					attackTime: crackliness.linexp(0, 1, 0.02, 0.01),
+					releaseTime:crackliness.linlin(0, 1, 0.2, 0.01)),
+				gate: Impulse.kr(40)),
+				k.linlin(0, 5, -1, 1)
+			)
+		});
+		var panned_out = volume * synth * EnvGen.ar(Env.adsr, gate: gate, doneAction: 2) * Pan2.ar(DC.ar(1), pan);
+		Out.ar(0, panned_out);
+	});
+)
+)
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/definitions.py
+======================================================================
+
+"""
+SCAMP Example: Evolving Form Definitions
+
+Shared dynamics envelopes and bar-line helpers for evolving_form.py.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+# playback_settings.adjustments.set("staccato", "length * 0.3")
+
+forte_piano = Envelope(
+    [0.8, 0.4, 1.0], [0.2, 0.8], curve_shapes=[0, 3]
+)
+
+diminuendo = Envelope.from_levels([0.8, 0.3])
+
+
+def wrap_in_range(value, low, high):
+    return (value - low) % (high - low) + low
+
+
+bar_lines = []
+
+
+def do_bar_line(beat):
+    beats_since_last_bar_line = beat - bar_lines[-1] if len(bar_lines) > 0 else beat
+    if beats_since_last_bar_line % 1 == 0 and beats_since_last_bar_line < 5:
+        bar_lengths = [beats_since_last_bar_line]
+    else:
+        num_bars_to_add = 2
+        while beats_since_last_bar_line / num_bars_to_add > 4:
+            num_bars_to_add += 1
+        last_bar_length = round(beats_since_last_bar_line / num_bars_to_add)
+        remaining_bars_length = beats_since_last_bar_line - last_bar_length
+        if remaining_bars_length <= 5:
+            bar_lengths = [remaining_bars_length, last_bar_length]
+        else:
+            first_bar_length = remaining_bars_length % 3 + 3 if remaining_bars_length % 3 < 2 else remaining_bars_length % 3
+            bar_lengths = [first_bar_length] + [3] * int((remaining_bars_length - first_bar_length) / 3) + [last_bar_length]
+    for bar_length in bar_lengths:
+        bar_lines.append(bar_lines[-1] + bar_length if len(bar_lines) > 0 else bar_length)
+
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/evolving_form.py
+======================================================================
+
+"""
+SCAMP Example: Evolving Form
+
+The main script for the piece, drawing upon definitions.py and formal_parameters.py.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.pitch import Scale
+from definitions import *
+from formal_parameters import *
+from random import random, choice, uniform, seed
+
+seed(0)
+s = Session()
+
+cello = s.new_part("cello")
+pianoteq = s.new_midi_part("pianoteq", midi_output_device="IAC")
+supercollider_instrument = s.new_osc_part("superInst", 57120, "127.0.0.1")
+
+s.set_tempo_targets([150, 60],
+                    [Moment.after_time(TOTAL_LENGTH * 0.618), Moment.after_time(TOTAL_LENGTH)])
+
+s.start_transcribing()
+
+interval = 1
+cello_pitch = 48
+
+
+def pianoteq_upbeat():
+    start_pitch = 72 + cello_pitch % 12
+    end_pitch = 72 + (cello_pitch + interval) % 12
+    if end_pitch < start_pitch:
+        end_pitch += 12
+    for i, p in enumerate([start_pitch + uniform(-k, k) for k in range(7)]):
+        pianoteq.play_note(p, 0.3 + 0.1 * i, 0.5/7)
+    
+    set_rate_target(pianoteq_gesture_rit_factor.value_at(s.time), Moment.after_beats(15))
+    p = end_pitch
+    volume = 1.0
+    pianoteq.play_note(p, volume, 0.375)
+    for _ in range(int(pianoteq_gesture_length.value_at(s.time))):
+        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
+        degree = round(scale.pitch_to_degree(p))
+        pianoteq.play_note(scale.degree_to_pitch(degree - 4), volume, 0.125)
+        pianoteq.play_note(scale.degree_to_pitch(degree - 3), volume, 0.375)
+        volume *= 0.8
+        p = scale.degree_to_pitch(degree - 3)
+        
+
+def pianoteq_filler():
+    p = 60
+    while random() < pianoteq_filler_probability.value_at(s.time):
+        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
+        degree = round(scale.pitch_to_degree(p))
+        if p == 60:
+            wait(1/5)
+        for i in range(4):
+            pianoteq.play_chord([scale.degree_to_pitch(degree + 2*i),
+                                 scale.degree_to_pitch(degree + 2*i + 3)],
+                                0.6 + 0.1*i, 1/5, "staccatissimo")
+        if p != 60 and random() < pianoteq_filler_probability.value_at(s.time):
+            pianoteq.play_chord([scale.degree_to_pitch(degree + 4),
+                                 scale.degree_to_pitch(degree + 9),
+                                 scale.degree_to_pitch(degree + 11)],
+                                1.0, 1/5, "staccatissimo")
+        else:
+            wait(1/5)
+        p = wrap_in_range(p + 6, 62, 92)
+
+
+def sc_gesture():
+    start_pan = uniform(-1, 1)
+    end_pan = uniform(0, 1) if start_pan < 0 else uniform(-1, 0)
+    register_ref = sc_register.value_at(s.time)
+    supercollider_instrument.play_note(
+        register_ref + cello_pitch % 12,
+        [0, 0.5], sc_gesture_length.value_at(s.time),
+        {"param_crackliness": [0, crackliness.value_at(s.time)],
+         "param_pan": start_pan}
+    )
+    supercollider_instrument.play_note(
+        [register_ref + cello_pitch % 12, register_ref + cello_pitch % 12 + 12],
+        [[0.5, 0], [1], [-4]], sc_gesture_length.value_at(s.time) * 3/2,
+        {"param_crackliness": [crackliness.value_at(s.time), 0],
+         "param_spread": [[0, 0, 0.5], [0.5, 0.5]],
+         "param_pan": end_pan}
+    )
+
+
+piano_tech_clock = None
+sc_gesture_clock = None
+
+while True:
+    if random() < cello_continue_probability.value_at(s.time):
+        if len(bar_lines) > 0 and s.beat - bar_lines[-1] > 3 and \
+                (piano_tech_clock is None or not piano_tech_clock.alive):
+            piano_tech_clock = s.fork(pianoteq_filler)
+            do_bar_line(s.beat)
+            
+        cello.play_note(cello_pitch, forte_piano, choice([1.0, 1.5]))
+    else:
+        # end condition; break and go to final note
+        if cello_pitch % 12 == 0 and s.time >= TOTAL_LENGTH:
+            break
+        if s.time > 20 and (sc_gesture_clock is None or not sc_gesture_clock.alive):
+            sc_gesture_clock = s.fork(sc_gesture)
+        cello.play_note(cello_pitch, diminuendo, choice([2.0, 2.5, 3.0]))
+        if piano_tech_clock is not None:
+            piano_tech_clock.kill()
+        wait(choice([0.5, 1.0]))
+        if s.time > 40:
+            piano_tech_clock = s.fork(pianoteq_upbeat)
+        
+        if random() < cello_staccato_probability.value_at(s.time):
+            cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
+            interval += 1
+            wait(0.25)
+            cello.play_note(cello_pitch, 0.9, 0.25, "staccato")
+        else:
+            wait(0.5)
+        do_bar_line(s.beat)
+        
+    cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
+    interval += 1
+    
+cello.play_note(36, diminuendo, [4.0])
+do_bar_line(s.beat)
+s.stop_transcribing().to_score(bar_line_locations=bar_lines, max_divisor=14).show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/evolving_form/formal_parameters.py
+======================================================================
+
+"""
+SCAMP Example: Formal Parameters
+
+Formal-parameter envelopes for evolving_form.py; run directly to plot them.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+TOTAL_LENGTH = 180
+
+# golden ratio durations
+gr, one_minus_gr = TOTAL_LENGTH * 0.618, TOTAL_LENGTH * (1 - 0.618)
+
+cello_continue_probability = Envelope([0.4, 1.0, 0], [gr, one_minus_gr])
+cello_staccato_probability = Envelope.from_levels([0, 1], length=TOTAL_LENGTH)
+pianoteq_gesture_length = Envelope.from_levels([0, 0, 10, 0], length=TOTAL_LENGTH)
+pianoteq_gesture_rit_factor = Envelope([0.25, 0.8, 0.1], [gr, one_minus_gr])
+pianoteq_filler_probability = Envelope([0.3, 0.97, 0.3], [gr, one_minus_gr])
+crackliness = Envelope([0.6, 1.0, 0], [gr, one_minus_gr])
+sc_gesture_length = Envelope([5, 2, 5], [gr, one_minus_gr])
+sc_register = Envelope([72, 72, 60, 60, 48, 48, 36, 36 ],
+                       [TOTAL_LENGTH * 0.7, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1])
+
+
+if __name__ == "__main__":
+    cello_continue_probability.show_plot("Cello continue probability")
+    cello_staccato_probability.show_plot("Cello staccato probability")
+    pianoteq_gesture_length.show_plot("Pianoteq gesture length")
+    pianoteq_gesture_rit_factor.show_plot("Pianoteq rit factor")
+    pianoteq_filler_probability.show_plot("Pianoteq filler probability")
+    crackliness.show_plot("SC instrument crackliness")
+    sc_gesture_length.show_plot("SC instrument gesture length")
+    sc_register.show_plot("SC instrument register")
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition & form/Larger-scale form/time_varying_parameter_example.py
+======================================================================
+
+"""
+SCAMP Example: TimeVaryingParameter Extension
+
+A script using the context-sensitive :class:`~expenvelope.envelope.Envelope` wrapper :class:`TimeVaryingParameter`,
+which reads into the underlying envelope at the current clock   's beat or time when called.
+"""
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.utilities import TimeVaryingParameter
+
+
+s = Session()
+
+piano = s.new_part("piano")
+
+
+def play_gesture(center_pitch, width, length):
+    pitch_shape = TimeVaryingParameter.from_levels([0, width, -width, -width/2, -width, 0], length=length)
+    volume_shape = TimeVaryingParameter([1, 0.4, 1], [length * 0.1, length * 0.9])
+    while current_clock().beat < length:
+        piano.play_note(int(center_pitch + pitch_shape()), volume_shape(), 0.25)
+
+
+width_param = TimeVaryingParameter([4, 20, 0], [30, 30])
+center_pitch_param = TimeVaryingParameter([60, 80, 40, 60], [20, 20, 20])
+length_param = TimeVaryingParameter([10, 1], [60])
+
+while s.beat < 65:
+    fork(play_gesture, args=(center_pitch_param(), width_param(), length_param()), initial_tempo=180)
+    wait_for_children_to_finish()

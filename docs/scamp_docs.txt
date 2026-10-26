@@ -373,6 +373,18 @@ Here are a few examples of pieces of music recently created in SCAMP.
 More coming soon!
 
 
+Gabriel Dufour-Laperrière: Πάντα ῥεῖ (Pánta rhei), for string quartet
+=====================================================================
+
+Performed by Quatuor Bozzini. According to Gabriel, "Each section of
+the piece was composed through SCAMP, coding and working out each
+algorithm until I was satisfied with the result. I then assembled the
+good bits into a coherent whole. SCAMP let me further develop my
+musical processes and gain better control over them. It was also
+flexible enough to implement a specific microtonal notation that the
+musicians wanted."
+
+
 Marc Evanstein: Searsville 1891-2015, for open ensemble with flute and clarinet solo
 ====================================================================================
 
@@ -1112,7 +1124,8 @@ class scamp.instruments.ChordHandle(note_handles: Sequence[NoteHandle], interval
 
       Change the pitches of this chord such that the first note of the
       chord goes to the given target value or values, over a given
-      duration and with a given curve shape.
+      duration and with a given curve shape. Only works if the chord
+      was started with *fixed=False*.
 
       Parameters:
          * **target_value_or_values** -- either a single target pitch
@@ -1145,7 +1158,9 @@ class scamp.instruments.ChordHandle(note_handles: Sequence[NoteHandle], interval
 
       Change the volume for all notes in this chord to a given target
       value or values, over a given duration and with a given curve
-      shape.
+      shape. Requires *fixed=False*, and can only raise volume above
+      the start value if an explicit *velocity* was given when the
+      chord was started.
 
       Parameters:
          * **target_value_or_values** -- either a single target volume
@@ -1338,7 +1353,7 @@ class scamp.instruments.Ensemble(default_soundfont: str = 'default', default_aud
       Parameters:
          **index** -- which instrument
 
-   new_silent_part(name: str = None, default_spelling_policy: SpellingPolicy = None, clef_preference='from_name') -> ScampInstrument
+   new_silent_part(name: str = None, default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', start_note_fixed: bool = True) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble with
       no PlaybackImplementations.
@@ -1352,10 +1367,14 @@ class scamp.instruments.Ensemble(default_soundfont: str = 'default', default_aud
          * **clef_preference** -- the "clef_preference" for the new
            part
 
+         * **start_note_fixed** -- the "start_note_fixed" default for
+           the new part. Only relevant if adding a MIDI playback
+           implementation.
+
       Returns:
          the newly created ScampInstrument
 
-   new_part(name: str = None, preset='auto', soundfont: str = 'default', num_channels: int = 8, audio_driver: str = 'default', max_pitch_bend: int = 'default', note_on_and_off_only: bool = False, default_spelling_policy: SpellingPolicy = None, clef_preference='from_name', volume_cc_num: int = 11) -> ScampInstrument
+   new_part(name: str = None, preset='auto', soundfont: str = 'default', num_channels: int = 8, audio_driver: str = 'default', max_pitch_bend: int = 'default', start_note_fixed: bool = True, default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', volume_cc_num: int = 11, note_on_and_off_only: bool = False) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble that
       uses a SoundfontPlaybackImplementation. Unless otherwise
@@ -1383,15 +1402,8 @@ class scamp.instruments.Ensemble(default_soundfont: str = 'default', default_aud
          * **max_pitch_bend** -- max pitch bend to use for this
            instrument
 
-         * **note_on_and_off_only** -- This enforces a rule of no
-           dynamic pitch bends, expression (volume) changes, or other
-           cc messages. Valuable when using "start_note" instead of
-           "play_note" in music that doesn't do any dynamic
-           pitch/volume/parameter changes. Without this flag, notes
-           will all be placed on separate MIDI channels, since they
-           could potentially change pitch or volume; with this flags,
-           we know they won't, so they can share the same MIDI
-           channels, only using an extra one due to microtonality.
+         * **start_note_fixed** -- default "start_note_fixed" for
+           notes started with "start_note()" on this part.
 
          * **default_spelling_policy** -- the
            "default_spelling_policy" for the new part
@@ -1402,10 +1414,13 @@ class scamp.instruments.Ensemble(default_soundfont: str = 'default', default_aud
          * **volume_cc_num** -- The cc value used for volume changes.
            Defaults to 11 (expression).
 
+         * **note_on_and_off_only** -- Deprecated; use
+           *start_note_fixed*.
+
       Returns:
          the newly created ScampInstrument
 
-   new_midi_part(name: str = None, midi_output_device: int | str = None, num_channels: int = 8, midi_output_name: str = None, max_pitch_bend: int = 'default', note_on_and_off_only: bool = False, default_spelling_policy: SpellingPolicy = None, clef_preference='from_name', start_channel: int = 0, volume_cc_num: int = 11) -> ScampInstrument
+   new_midi_part(name: str = None, midi_output_device: int | str = None, num_channels: int = 8, midi_output_name: str = None, max_pitch_bend: int = 'default', start_note_fixed: bool = True, default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', start_channel: int = 0, volume_cc_num: int = 11, note_on_and_off_only: bool = False) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble that
       uses a MIDIStreamPlaybackImplementation. This means that when
@@ -1429,15 +1444,8 @@ class scamp.instruments.Ensemble(default_soundfont: str = 'default', default_aud
          * **max_pitch_bend** -- max pitch bend to use for this
            instrument
 
-         * **note_on_and_off_only** -- This enforces a rule of no
-           dynamic pitch bends, expression (volume) changes, or other
-           cc messages. Valuable when using "start_note" instead of
-           "play_note" in music that doesn't do any dynamic
-           pitch/volume/parameter changes. Without this flag, notes
-           will all be placed on separate MIDI channels, since they
-           could potentially change pitch or volume; with this flags,
-           we know they won't, so they can share the same MIDI
-           channels, only using an extra one due to microtonality.
+         * **start_note_fixed** -- default "start_note_fixed" for
+           notes started with "start_note()" on this part.
 
          * **default_spelling_policy** -- the
            "default_spelling_policy" for the new part
@@ -1454,10 +1462,13 @@ class scamp.instruments.Ensemble(default_soundfont: str = 'default', default_aud
          * **volume_cc_num** -- The cc value used for volume changes.
            Defaults to 11 (expression).
 
+         * **note_on_and_off_only** -- Deprecated; use
+           *start_note_fixed*.
+
       Returns:
          the newly created ScampInstrument
 
-   new_osc_part(name: str = None, port: int = None, ip_address: str = '127.0.0.1', message_prefix: str = None, osc_message_addresses: dict = 'default', default_spelling_policy: SpellingPolicy = None, clef_preference='from_name') -> ScampInstrument
+   new_osc_part(name: str = None, port: int = None, ip_address: str = '127.0.0.1', message_prefix: str = None, osc_message_addresses: dict = 'default', default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', start_note_fixed: bool = True) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble that
       uses a OSCPlaybackImplementation. This means that when notes are
@@ -1486,6 +1497,9 @@ class scamp.instruments.Ensemble(default_soundfont: str = 'default', default_aud
 
          * **clef_preference** -- the "clef_preference" for the new
            part
+
+         * **start_note_fixed** -- default "start_note_fixed" for
+           notes started with "start_note()" on this part.
 
       Returns:
          the newly created ScampInstrument
@@ -1647,7 +1661,8 @@ class scamp.instruments.NoteHandle(note_id: int, instrument: ScampInstrument)
    change_pitch(target_value_or_values: float | Sequence[float], transition_length_or_lengths: float | Sequence[float] = 0, transition_curve_shape_or_shapes: float | Sequence[float] = 0, clock: Clock = None) -> None
 
       Change the pitch of this note to a given target value or values,
-      over a given duration and with a given curve shape.
+      over a given duration and with a given curve shape. Only works
+      if the note was started with *fixed=False*.
 
       Parameters:
          * **target_value_or_values** -- either a single target pitch
@@ -1677,6 +1692,9 @@ class scamp.instruments.NoteHandle(note_id: int, instrument: ScampInstrument)
 
       Change the volume of this note to a given target value or
       values, over a given duration and with a given curve shape.
+      Requires *fixed=False*, and can only raise volume above the
+      start value if an explicit *velocity* was given when the note
+      was started.
 
       Parameters:
          * **target_value_or_values** -- either a single target volume
@@ -1719,7 +1737,7 @@ class scamp.instruments.NoteHandle(note_id: int, instrument: ScampInstrument)
 scamp.instruments.ScampInstrument
 *********************************
 
-class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = None, default_spelling_policy: SpellingPolicy = None, clef_preference='from_name', playback_implementations: Sequence[PlaybackImplementation] = None)
+class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = None, default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', playback_implementations: Sequence[PlaybackImplementation] = None, start_note_fixed: bool = True)
 
    Bases: "SavesToJSON"
 
@@ -1803,6 +1821,18 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
    | "num_notes | Returns the number of notes currently playing.                                             |
    | _playing"( |                                                                                            |
    | )          |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "pedal_cha | Quickly lifts and re-presses the sustain pedal, clearing resonating notes.                 |
+   | nge"([dura |                                                                                            |
+   | tion, pres |                                                                                            |
+   | s_amount]) |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "pedal_dow | Presses the sustain pedal, by sending a CC 64 message to all midi- based playback          |
+   | n"([press_ | implementations.                                                                           |
+   | amount])   |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "pedal_up" | Releases the sustain pedal, by sending a CC 64 message of 0 to all midi-based playback     |
+   | ()         | implementations.                                                                           |
    +------------+--------------------------------------------------------------------------------------------+
    | "play_chor | Play a chord with the given pitches, volume, and length.                                   |
    | d"(pitches |                                                                                            |
@@ -1912,7 +1942,7 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
          **ensemble** -- the "Ensemble" that this instrument should
          belong to.
 
-   play_note(pitch: PitchCompatible, volume: VolumeCompatible, length: DurationCompatible, properties: NotePropertiesCompatible = None, blocking: bool = True, clock: Clock = None, silent: bool = False, transcribe: bool = True) -> None
+   play_note(pitch: PitchCompatible, volume: VolumeCompatible, length: DurationCompatible, properties: NotePropertiesCompatible = None, blocking: bool = True, clock: Clock = None, velocity: float = None, silent: bool = False, transcribe: bool = True) -> None
 
       Play a note on this instrument, with the given pitch, volume and
       length.
@@ -1941,6 +1971,11 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
          * **clock** -- which clock to use. If None, capture the clock
            from context.
 
+         * **velocity** -- for MIDI-based playback implementations (or
+           other implementations that take velocity), fixes the note-
+           on velocity (0 to 1), turning volume into expression cc. By
+           default (*None*) velocity follows volume.
+
          * **silent** -- if True, note is not played back, but is
            still transcribed when a "Transcriber" is active.
            (Generally ignored by end user.)
@@ -1949,7 +1984,7 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
            when a "Transcriber" is active. (Generally ignored by end
            user.)
 
-   play_chord(pitches: Sequence[TypeAliasForwardRef('PitchCompatible')], volume: VolumeCompatible, length: DurationCompatible, properties: NotePropertiesCompatible = None, blocking: bool = True, clock: Clock = None, silent: bool = False, transcribe: bool = True) -> None
+   play_chord(pitches: Sequence[TypeAliasForwardRef('PitchCompatible')], volume: VolumeCompatible, length: DurationCompatible, properties: NotePropertiesCompatible = None, blocking: bool = True, clock: Clock = None, velocity: float = None, silent: bool = False, transcribe: bool = True) -> None
 
       Play a chord with the given pitches, volume, and length.
       Essentially, this is a convenience method that bundles together
@@ -1970,11 +2005,13 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
 
          * **clock** -- see description for "play_note"
 
+         * **velocity** -- see "play_note()"
+
          * **silent** -- see description for "play_note"
 
          * **transcribe** -- see description for "play_note"
 
-   start_note(pitch: PitchCompatible, volume: VolumeCompatible, properties: NotePropertiesCompatible = None, clock: Clock = None, max_volume: float = 1, flags: Sequence[str] = None) -> NoteHandle
+   start_note(pitch: PitchCompatible, volume: VolumeCompatible, properties: NotePropertiesCompatible = None, clock: Clock = None, fixed: bool | str = 'auto', velocity: float = None, flags: Sequence[str] = None) -> NoteHandle
 
       Start a note with the given pitch, volume, and properties
 
@@ -1989,21 +2026,22 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
            pitch, volume, etc. If None, captures the clock from
            context.
 
-         * **max_volume** -- This is a bit of a pain, but since midi
-           playback requires us to set the velocity at the beginning
-           of the note, and thereafter vary volume using expression,
-           and since expression can only make the note quieter, we
-           need to start the note with velocity equal to the max
-           desired volume (using expression to adjust it down to the
-           actual start volume). The default will be 1, meaning as
-           loud as possible, since unless we know in advance what the
-           note is going to do, we need to be prepared to go up to
-           full volume. Using play_note, we do actually know in
-           advance how loud the note is going to get, so we can set
-           max volume to the peak of the Envelope. Honestly, I wish I
-           could separate this implementation detail from the
-           ScampInstrument class, but I don't see how this would be
-           possible.
+         * **fixed** -- whether the note is locked at note-on. *True*
+           maps volume directly to velocity and allows the note to
+           share a midi channel with other notes, but forbids any
+           later changes. *False* gives the note its own channel and
+           allows pitch, volume, and other parameters to change. A
+           note with an "Envelope" argument or an explicit *velocity*
+           must animate, so it is always unfixed, ignoring this
+           argument. The default *"auto"* falls back to this
+           instrument's "start_note_fixed".
+
+         * **velocity** -- an explicit note-on velocity (0 to 1),
+           decoupling the attack from volume. By default (*None*)
+           velocity follows the start volume, so expression starts at
+           100% and volume can only be lowered. Given a value, the
+           note attacks at that velocity while the volume argument
+           drives expression directly, over its full range.
 
          * **flags** -- list of strings that act as flags for how the
            note should be processed. Should probably be ignored by a
@@ -2012,7 +2050,7 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
       Returns:
          a NoteHandle with which to later manipulate the note
 
-   start_chord(pitches: Sequence[TypeAliasForwardRef('PitchCompatible')], volume: VolumeCompatible, properties: NotePropertiesCompatible = None, clock: Clock = None, max_volume: float = 1, flags: Sequence[str] = None) -> ChordHandle
+   start_chord(pitches: Sequence[TypeAliasForwardRef('PitchCompatible')], volume: VolumeCompatible, properties: NotePropertiesCompatible = None, clock: Clock = None, fixed: bool | str = 'auto', velocity: float = None, flags: Sequence[str] = None) -> ChordHandle
 
       Simple utility for starting chords without starting each note
       individually.
@@ -2026,7 +2064,9 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
 
          * **clock** -- see start_note
 
-         * **max_volume** -- see start_note
+         * **fixed** -- see start_note
+
+         * **velocity** -- see start_note
 
          * **flags** -- see start_note
 
@@ -2152,15 +2192,8 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
 
          * **max_pitch_bend** -- max pitch bend to allow
 
-         * **note_on_and_off_only** -- This enforces a rule of no
-           dynamic pitch bends, expression (volume) changes, or other
-           cc messages. Valuable when using "start_note()" instead of
-           "play_note()" in music that doesn't do any dynamic
-           pitch/volume/parameter changes. Without this flag, notes
-           will all be placed on separate MIDI channels, since they
-           could potentially change pitch or volume; with this flags,
-           we know they won't, so they can share the same MIDI
-           channels, only using an extra one due to microtonality.
+         * **note_on_and_off_only** -- Deprecated; set the
+           instrument's *start_note_fixed* instead.
 
          * **volume_cc_num** -- The cc value used for volume changes.
            Defaults to 11 (expression).
@@ -2192,15 +2225,8 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
 
          * **max_pitch_bend** -- max pitch bend to allow
 
-         * **note_on_and_off_only** -- This enforces a rule of no
-           dynamic pitch bends, expression (volume) changes, or other
-           cc messages. Valuable when using "start_note()" instead of
-           "play_note()" in music that doesn't do any dynamic
-           pitch/volume/parameter changes. Without this flag, notes
-           will all be placed on separate MIDI channels, since they
-           could potentially change pitch or volume; with this flags,
-           we know they won't, so they can share the same MIDI
-           channels, only using an extra one due to microtonality.
+         * **note_on_and_off_only** -- Deprecated; set the
+           instrument's *start_note_fixed* instead.
 
          * **start_channel** -- the first channel to use. For
            instance, if start_channel is 4, and num_channels is 5, we
@@ -2269,6 +2295,35 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
          * **value_from_0_to_1** -- the value to send, normalized from
            0 to 1
 
+   pedal_down(press_amount: float = 1.0) -> None
+
+      Presses the sustain pedal, by sending a CC 64 message to all
+      midi-based playback implementations.
+
+      Parameters:
+         **press_amount** -- how far down to press the pedal, from 0
+         to 1 (values in between allow half-pedaling, if supported by
+         the receiving device)
+
+   pedal_up() -> None
+
+      Releases the sustain pedal, by sending a CC 64 message of 0 to
+      all midi-based playback implementations.
+
+   pedal_change(duration: float = 0.2, press_amount: float = None) -> None
+
+      Quickly lifts and re-presses the sustain pedal, clearing
+      resonating notes. Returns immediately, with the re-press
+      happening in a forked process after the given duration.
+
+      Parameters:
+         * **duration** -- how long (in seconds, regardless of tempo)
+           to keep the pedal up before re-pressing it
+
+         * **press_amount** -- how far down to re-press the pedal,
+           from 0 to 1; defaults to the press amount of the last call
+           to "pedal_down()" or "pedal_change()".
+
    property clef_preference
 
       The clef preference for this instrument. Can be any of:
@@ -2294,8 +2349,8 @@ class scamp.instruments.ScampInstrument(name: str = None, ensemble: Ensemble = N
    property default_spelling_policy
 
       The default spelling policy for notes played back by this
-      instrument. (Can be set with either a "SpellingPolicy" or a
-      string, which is passed to "from_string()")
+      instrument. (Can be set with a "SpellingPolicy", or a string or
+      tuple interpretable as such via "interpret()")
 
    property note_info_by_id
 
@@ -2498,6 +2553,12 @@ playback_implementations.py.
 
     * "ScampInstrument.send_midi_cc()"
 
+    * "ScampInstrument.pedal_down()"
+
+    * "ScampInstrument.pedal_up()"
+
+    * "ScampInstrument.pedal_change()"
+
     * "ScampInstrument.clef_preference"
 
     * "ScampInstrument.resolve_clef_preference()"
@@ -2618,9 +2679,9 @@ class scamp.note_properties.NoteProperties(*args, **kwargs)
    | ICT"       |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
 
-   PROPERTY_TYPES = ({'chord_merger_critical': True, 'default': [], 'key': 'articulations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^articulations?$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': [], 'key': 'notations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^notations?$', 'regularization_function': None}, {'chord_merger_critical': True, 'custom_type': <class 'scamp.spanners.Spanner'>, 'default': [], 'key': 'spanners', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^spanners?$', 'regularization_function': None}, {'chord_merger_critical': False, 'default': ['normal'], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'noteheads', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^noteheads?$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': [], 'key': 'dynamics', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^dynamics?$', 'regularization_function': None}, {'chord_merger_critical': True, 'custom_type': <class 'scamp.text.StaffText'>, 'default': [], 'key': 'texts', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^texts?$', 'regularization_function': <function NoteProperties.<lambda>>}, {'chord_merger_critical': True, 'custom_type': <class 'scamp.playback_adjustments.NotePlaybackAdjustment'>, 'default': [], 'key': 'playback_adjustments', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(playback_)?adjustments?$', 'regularization_function': <function NoteProperties.<lambda>>}, {'chord_merger_critical': False, 'custom_type': <class 'scamp.spelling.SpellingPolicy'>, 'default': [], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'spelling_policies', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(spelling|spelling_policy|spelling_policies|key)$', 'regularization_function': <function NoteProperties.<lambda>>}, {'chord_merger_critical': True, 'default': None, 'key': 'voice', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^voice$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': {}, 'key': 'extra_playback_parameters', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^extra_playback_parameters$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': False, 'key': 'starts_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^starts_tie$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': False, 'key': 'ends_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^ends_tie$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': False, 'key': 'manual_split_point', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^manual_split_point$', 'regularization_function': None})
+   PROPERTY_TYPES = ({'chord_merger_critical': True, 'default': [], 'key': 'articulations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^articulations?$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': [], 'key': 'notations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^notations?$', 'regularization_function': None}, {'chord_merger_critical': True, 'custom_type': <class 'scamp.spanners.Spanner'>, 'default': [], 'key': 'spanners', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^spanners?$', 'regularization_function': None}, {'chord_merger_critical': False, 'default': ['normal'], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'noteheads', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^noteheads?$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': [], 'key': 'dynamics', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^dynamics?$', 'regularization_function': None}, {'chord_merger_critical': True, 'custom_type': <class 'scamp.text.StaffText'>, 'default': [], 'key': 'texts', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^texts?$', 'regularization_function': <function NoteProperties.<lambda>>}, {'chord_merger_critical': True, 'custom_type': <class 'scamp.playback_adjustments.NotePlaybackAdjustment'>, 'default': [], 'key': 'playback_adjustments', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(playback_)?adjustments?$', 'regularization_function': <function NoteProperties.<lambda>>}, {'chord_merger_critical': False, 'custom_type': <class 'scamp.spelling.SpellingPolicy'>, 'default': [], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'spelling_policies', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(spelling|spelling_policy|spelling_policies|key)$', 'regularization_function': <function NoteProperties.<lambda>>}, {'chord_merger_critical': True, 'default': None, 'key': 'voice', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^voice$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': 0, 'key': 'octave_displacement', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^octave_displacement$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': {}, 'key': 'extra_playback_parameters', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^extra_playback_parameters$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': False, 'key': 'starts_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^starts_tie$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': False, 'key': 'ends_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^ends_tie$', 'regularization_function': None}, {'chord_merger_critical': True, 'default': False, 'key': 'manual_split_point', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^manual_split_point$', 'regularization_function': None})
 
-   PROPERTY_TYPES_AS_DICT = {'articulations': {'chord_merger_critical': True, 'default': [], 'key': 'articulations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^articulations?$', 'regularization_function': None}, 'dynamics': {'chord_merger_critical': True, 'default': [], 'key': 'dynamics', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^dynamics?$', 'regularization_function': None}, 'ends_tie': {'chord_merger_critical': True, 'default': False, 'key': 'ends_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^ends_tie$', 'regularization_function': None}, 'extra_playback_parameters': {'chord_merger_critical': True, 'default': {}, 'key': 'extra_playback_parameters', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^extra_playback_parameters$', 'regularization_function': None}, 'manual_split_point': {'chord_merger_critical': True, 'default': False, 'key': 'manual_split_point', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^manual_split_point$', 'regularization_function': None}, 'notations': {'chord_merger_critical': True, 'default': [], 'key': 'notations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^notations?$', 'regularization_function': None}, 'noteheads': {'chord_merger_critical': False, 'default': ['normal'], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'noteheads', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^noteheads?$', 'regularization_function': None}, 'playback_adjustments': {'chord_merger_critical': True, 'custom_type': <class 'scamp.playback_adjustments.NotePlaybackAdjustment'>, 'default': [], 'key': 'playback_adjustments', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(playback_)?adjustments?$', 'regularization_function': <function NoteProperties.<lambda>>}, 'spanners': {'chord_merger_critical': True, 'custom_type': <class 'scamp.spanners.Spanner'>, 'default': [], 'key': 'spanners', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^spanners?$', 'regularization_function': None}, 'spelling_policies': {'chord_merger_critical': False, 'custom_type': <class 'scamp.spelling.SpellingPolicy'>, 'default': [], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'spelling_policies', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(spelling|spelling_policy|spelling_policies|key)$', 'regularization_function': <function NoteProperties.<lambda>>}, 'starts_tie': {'chord_merger_critical': True, 'default': False, 'key': 'starts_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^starts_tie$', 'regularization_function': None}, 'texts': {'chord_merger_critical': True, 'custom_type': <class 'scamp.text.StaffText'>, 'default': [], 'key': 'texts', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^texts?$', 'regularization_function': <function NoteProperties.<lambda>>}, 'voice': {'chord_merger_critical': True, 'default': None, 'key': 'voice', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^voice$', 'regularization_function': None}}
+   PROPERTY_TYPES_AS_DICT = {'articulations': {'chord_merger_critical': True, 'default': [], 'key': 'articulations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^articulations?$', 'regularization_function': None}, 'dynamics': {'chord_merger_critical': True, 'default': [], 'key': 'dynamics', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^dynamics?$', 'regularization_function': None}, 'ends_tie': {'chord_merger_critical': True, 'default': False, 'key': 'ends_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^ends_tie$', 'regularization_function': None}, 'extra_playback_parameters': {'chord_merger_critical': True, 'default': {}, 'key': 'extra_playback_parameters', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^extra_playback_parameters$', 'regularization_function': None}, 'manual_split_point': {'chord_merger_critical': True, 'default': False, 'key': 'manual_split_point', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^manual_split_point$', 'regularization_function': None}, 'notations': {'chord_merger_critical': True, 'default': [], 'key': 'notations', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^notations?$', 'regularization_function': None}, 'noteheads': {'chord_merger_critical': False, 'default': ['normal'], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'noteheads', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^noteheads?$', 'regularization_function': None}, 'octave_displacement': {'chord_merger_critical': True, 'default': 0, 'key': 'octave_displacement', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^octave_displacement$', 'regularization_function': None}, 'playback_adjustments': {'chord_merger_critical': True, 'custom_type': <class 'scamp.playback_adjustments.NotePlaybackAdjustment'>, 'default': [], 'key': 'playback_adjustments', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(playback_)?adjustments?$', 'regularization_function': <function NoteProperties.<lambda>>}, 'spanners': {'chord_merger_critical': True, 'custom_type': <class 'scamp.spanners.Spanner'>, 'default': [], 'key': 'spanners', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^spanners?$', 'regularization_function': None}, 'spelling_policies': {'chord_merger_critical': False, 'custom_type': <class 'scamp.spelling.SpellingPolicy'>, 'default': [], 'is_default_function': <function NoteProperties.<lambda>>, 'key': 'spelling_policies', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^(spelling|spelling_policy|spelling_policies|key)$', 'regularization_function': <function NoteProperties.<lambda>>}, 'starts_tie': {'chord_merger_critical': True, 'default': False, 'key': 'starts_tie', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^starts_tie$', 'regularization_function': None}, 'texts': {'chord_merger_critical': True, 'custom_type': <class 'scamp.text.StaffText'>, 'default': [], 'key': 'texts', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^texts?$', 'regularization_function': <function NoteProperties.<lambda>>}, 'voice': {'chord_merger_critical': True, 'default': None, 'key': 'voice', 'merger_function': <function NoteProperties.<lambda>>, 'regex': '^voice$', 'regularization_function': None}}
 
    classmethod interpret(properties_object) -> NoteProperties
 
@@ -3397,7 +3458,7 @@ class scamp.performance.Performance(parts: Sequence[PerformancePart] = None, tem
 scamp.performance.PerformanceNote
 *********************************
 
-class scamp.performance.PerformanceNote(start_beat: float, length: float | tuple[float, ...], pitch: float | Envelope | Sequence, volume: float | Envelope, properties: dict)
+class scamp.performance.PerformanceNote(start_beat: float, length: float | tuple[float, ...], pitch: float | Envelope | Sequence, volume: float | Envelope, properties: dict, velocity: float = None)
 
    Bases: "SavesToJSON"
 
@@ -3416,6 +3477,12 @@ class scamp.performance.PerformanceNote(start_beat: float, length: float | tuple
       * **properties** -- dictionary of note properties, or string
         representing those properties
 
+      * **velocity** -- the note-on velocity (0 to 1) if it was
+        explicitly set independently of volume, else None. This is
+        playback-only, so it does not affect notation, but it is
+        preserved so that playback and MIDI export can reproduce the
+        original attack.
+
    Variables:
       * **start_beat** -- the start beat of the note
 
@@ -3431,6 +3498,9 @@ class scamp.performance.PerformanceNote(start_beat: float, length: float | tuple
 
       * **properties** -- dictionary of note properties, or string
         representing those properties
+
+      * **velocity** -- the note-on velocity (0 to 1) if explicitly
+        set independently of volume, else None
 
    -[ Methods ]-
 
@@ -3785,7 +3855,7 @@ class scamp.performance.PerformancePart(instrument: ScampInstrument = None, name
       Returns:
          the note you just added (for chaining purposes)
 
-   new_note(start_beat: float, length, pitch, volume, properties: dict) -> PerformanceNote
+   new_note(start_beat: float, length, pitch, volume, properties: dict, velocity: float = None) -> PerformanceNote
 
       Construct and add a new PerformanceNote to this Performance
 
@@ -3803,6 +3873,9 @@ class scamp.performance.PerformancePart(instrument: ScampInstrument = None, name
 
          * **properties** -- dictionary of note properties, or string
            representing those properties
+
+         * **velocity** -- an explicit note-on velocity (0 to 1) set
+           independently of volume, else None
 
       Returns:
          the note just added
@@ -4744,7 +4817,7 @@ defines how particular notations should be played back.
 scamp.playback_implementations.MIDIStreamPlaybackImplementation
 ***************************************************************
 
-class scamp.playback_implementations.MIDIStreamPlaybackImplementation(midi_output_device: str = 'default', num_channels=8, midi_output_name: str | None = None, max_pitch_bend: int = 'default', note_on_and_off_only: bool = False, start_channel=0, volume_cc_num: int = 11)
+class scamp.playback_implementations.MIDIStreamPlaybackImplementation(midi_output_device: str = 'default', num_channels=8, midi_output_name: str | None = None, max_pitch_bend: int = 'default', start_channel=0, volume_cc_num: int = 11)
 
    Bases: "_MIDIPlaybackImplementation"
 
@@ -4765,16 +4838,6 @@ class scamp.playback_implementations.MIDIStreamPlaybackImplementation(midi_outpu
       * **max_pitch_bend** -- max pitch bend allowed on this
         instrument. Defaults to the one defined in
         playback_settings.default_max_streaming_midi_pitch_bend.
-
-      * **note_on_and_off_only** -- This enforces a rule of no dynamic
-        pitch bends, expression (volume) changes, or other cc
-        messages. Valuable when using "start_note" instead of
-        "play_note" in music that doesn't do any dynamic
-        pitch/volume/parameter changes. Without this flag, notes will
-        all be placed on separate MIDI channels, since they could
-        potentially change pitch or volume; with this flags, we know
-        they won't, so they can share the same MIDI channels, only
-        using an extra one due to microtonality.
 
    -[ Methods ]-
 
@@ -5400,7 +5463,7 @@ class scamp.playback_implementations.PlaybackImplementation
 scamp.playback_implementations.SoundfontPlaybackImplementation
 **************************************************************
 
-class scamp.playback_implementations.SoundfontPlaybackImplementation(bank_and_preset: tuple[int, int] = (0, 0), soundfont: str = 'default', num_channels: int = 8, audio_driver: str = 'default', max_pitch_bend: int = 'default', note_on_and_off_only: bool = False, volume_cc_num: int = 11)
+class scamp.playback_implementations.SoundfontPlaybackImplementation(bank_and_preset: tuple[int, int] = (0, 0), soundfont: str = 'default', num_channels: int = 8, audio_driver: str = 'default', max_pitch_bend: int = 'default', volume_cc_num: int = 11)
 
    Bases: "_MIDIPlaybackImplementation"
 
@@ -5426,16 +5489,6 @@ class scamp.playback_implementations.SoundfontPlaybackImplementation(bank_and_pr
       * **max_pitch_bend** -- max pitch bend allowed on this
         instrument. Defaults to the one defined in
         playback_settings.default_max_soundfont_pitch_bend.
-
-      * **note_on_and_off_only** -- This enforces a rule of no dynamic
-        pitch bends, expression (volume) changes, or other cc
-        messages. Valuable when using "start_note" instead of
-        "play_note" in music that doesn't do any dynamic
-        pitch/volume/parameter changes. Without this flag, notes will
-        all be placed on separate MIDI channels, since they could
-        potentially change pitch or volume; with this flags, we know
-        they won't, so they can share the same MIDI channels, only
-        using an extra one due to microtonality.
 
    -[ Methods ]-
 
@@ -10069,8 +10122,8 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
    | p_address] |                                                                                            |
    | )          |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "run_as_se | Runs this session on a parallel thread so that it can act as a server.                     |
-   | rver"()    |                                                                                            |
+   | "run_as_se | Hands this session off to a background thread that waits forever, so the calling thread    |
+   | rver"()    | stays free.                                                                                |
    +------------+--------------------------------------------------------------------------------------------+
    | "start_tra | Starts transcribing everything played in this Session's (or by the given instruments) to a |
    | nscribing" | Performance.                                                                               |
@@ -10079,16 +10132,6 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
 
    -[ Inherited Methods ]-
 
-   +------------+--------------------------------------------------------------------------------------------+
-   | "absolute_ | Beat length in true seconds, with all parent rates folded in.                              |
-   | beat_lengt |                                                                                            |
-   | h"()       |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "absolute_ | Rate of this clock in beats / (true) second, with all parent rates folded in.              |
-   | rate"()    |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "absolute_ | Tempo (BPM) in true minutes, with all parent rates folded in.                              |
-   | tempo"()   |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "add_instr | Adds an instance of "ScampInstrument" to this Ensemble.                                    |
    | ument"(ins |                                                                                            |
@@ -10116,8 +10159,6 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
    | po_functio |                                                                                            |
    | n"(functio |                                                                                            |
    | n[, ...])  |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "beat"()   | How many beats have passed since this clock was created.                                   |
    +------------+--------------------------------------------------------------------------------------------+
    | "bring_up_ | Advance this clock's tempo_history to match where it currently is in scheduler time.       |
    | to_date"() |                                                                                            |
@@ -10264,10 +10305,10 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
    | tus"([verb |                                                                                            |
    | ose])      |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "projected | A wall-clock-interpolated estimate of "beat()".                                            |
+   | "projected | A wall-clock-interpolated estimate of "beat".                                              |
    | _beat"()   |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "projected | A wall-clock-interpolated estimate of "time()", advancing smoothly between events rather   |
+   | "projected | A wall-clock-interpolated estimate of "time", advancing smoothly between events rather     |
    | _time"()   | than holding still between them.                                                           |
    +------------+--------------------------------------------------------------------------------------------+
    | "register_ | Called when an instrument wants to register that it finished a note, records note in all   |
@@ -10344,7 +10385,9 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
    | formance,  |                                                                                            |
    | ...])      |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "time"()   | How much time has passed since this clock was created.                                     |
+   | "terminate | Kill this clock's children and their descendants in turn, returning once they have         |
+   | _forked_ch | finished unwinding.                                                                        |
+   | ildren"()  |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "use_absol | Shorthand for "timing_policy = 0.0" (always catch up to absolute schedule).                |
    | ute_timing |                                                                                            |
@@ -10369,6 +10412,11 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
    | o_finish"( |                                                                                            |
    | )          |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
+   | "wait_for_ | Block this clock's own thread until *clock* has finished, yielding to the scheduler so it  |
+   | clock_to_f | (and everything else) keeps running.                                                       |
+   | inish"(clo |                                                                                            |
+   | ck)        |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
    | "wait_fore | Block this clock's own thread indefinitely, yielding to the scheduler so child clocks keep |
    | ver"()     | running.                                                                                   |
    +------------+--------------------------------------------------------------------------------------------+
@@ -10380,7 +10428,19 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
    -[ Attributes ]-
 
    +------------+--------------------------------------------------------------------------------------------+
+   | "absolute_ | Beat length in true seconds, with all parent rates folded in.                              |
+   | beat_lengt |                                                                                            |
+   | h"         |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "absolute_ | Rate of this clock in beats / (true) second, with all parent rates folded in.              |
+   | rate"      |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "absolute_ | Tempo (BPM) in true minutes, with all parent rates folded in.                              |
+   | tempo"     |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
    | "alive"    | True if this clock is currently running (PENDING and DEAD both return False).              |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "beat"     | How many beats have passed since this clock was created.                                   |
    +------------+--------------------------------------------------------------------------------------------+
    | "beat_leng | The length of a beat in this clock in seconds.                                             |
    | th"        |                                                                                            |
@@ -10407,6 +10467,8 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
    |            | interconnected properties, and that by setting one of them the other two are automatically |
    |            | set in response according to the relationship: beat_length = 1/rate = 60/tempo.            |
    +------------+--------------------------------------------------------------------------------------------+
+   | "time"     | How much time has passed since this clock was created.                                     |
+   +------------+--------------------------------------------------------------------------------------------+
    | "timing_po | How the family trades off relative vs. absolute timing, as a float from 0 to 1.            |
    | licy"      |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
@@ -10417,10 +10479,21 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
 
    run_as_server() -> Session
 
-      Runs this session on a parallel thread so that it can act as a
-      server. This is the approach that should be taken if running
-      scamp from an interactive terminal session. Simply type "s =
-      Session().run_as_server()"
+      Hands this session off to a background thread that waits
+      forever, so the calling thread stays free. This is the approach
+      to take when driving scamp from an interactive terminal (REPL)
+      session, where you want the prompt to stay responsive: simply
+      type "s = Session().run_as_server()".
+
+      Note the tradeoff: once handed off, the calling thread no longer
+      owns the session's clock (its "current_clock()" becomes "None"),
+      so subsequent work must be scheduled on the returned object
+      explicitly — e.g. "s.fork(...)" — rather than through the
+      context-inferring module-level helpers "fork()" and "wait()". In
+      a normal top-to-bottom script you don't need this at all: the
+      thread that creates the "Session" owns its clock, so just use
+      "wait"/"fork" and, if you need to keep the process alive at the
+      end, "s.wait_forever()".
 
       Returns:
          self
@@ -10560,18 +10633,26 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
       Returns:
          the Performance we will be transcribing to
 
-   absolute_beat_length() -> float
+   property absolute_beat_length: float
 
       Beat length in true seconds, with all parent rates folded in.
+      (Read-only property; the pre-1.1 "clock.absolute_beat_length()"
+      spelling still works, with a DeprecationWarning.)
 
-   absolute_rate() -> float
+   property absolute_rate: float
 
       Rate of this clock in beats / (true) second, with all parent
       rates folded in.
 
-   absolute_tempo() -> float
+      (Read-only property. Before clockblocks 1.1 this was a method;
+      the "clock.absolute_rate()" spelling still works, with a
+      DeprecationWarning.)
+
+   property absolute_tempo: float
 
       Tempo (BPM) in true minutes, with all parent rates folded in.
+      (Read-only property; the pre-1.1 "clock.absolute_tempo()"
+      spelling still works, with a DeprecationWarning.)
 
    add_instrument(instrument: ScampInstrument) -> ScampInstrument
 
@@ -10614,15 +10695,16 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
 
       Drive this clock's tempo (BPM) from a function.
 
-   beat() -> float
+   property beat: float
 
       How many beats have passed since this clock was created. Note
       that this is quantized to the scheduler's event stream; for a
       live estimate when outside the clock system use
       "projected_time()".
 
-      Returns:
-         the elapsed beats.
+      (Read-only property. Before clockblocks 1.1 this was a method;
+      the "clock.beat()" spelling still works, with a
+      DeprecationWarning.)
 
    property beat_length: float
 
@@ -10684,21 +10766,21 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
 
       Returns a copy of this object by serializing to and from JSON.
 
-   extract_absolute_tempo_envelope(start_beat: float = 0, step_size: float = 0.1, tolerance: float = 0.005) -> TempoEnvelope
+   extract_absolute_tempo_envelope(start_beat: float = 0, end_beat: float | None = None, step_size: float = 0.1, tolerance: float = 0.005) -> TempoEnvelope
 
       Extract this clock's absolute tempo curve — its tempo as
       observed in master (scheduler) time, with parent rate-changes
       folded in. Used when building a Score from this clock's
       perspective.
 
-      For master, this is just the tempo_history as-is. Otherwise we
-      walk the inheritance chain: deepcopy each clock's tempo_history,
-      position each at the beat it has when the child is at
-      *start_beat*, then step the child forward *step_size* at a time
-      and cascade the resulting time-deltas up through each parent.
-      Final delta in master (seconds) / step_size (beats in this
-      clock) gives us a sample of absolute beat length, which we use
-      to build up an absolute tempo envelope.
+      Extracts over "[start_beat, end_beat]", where *end_beat*
+      defaults to this clock's current beat. When all ancestors are
+      pure, flat tempos, they simply scale this clock's tempo curve
+      directly. When the ancestors are changing, there is no exact
+      solution, so we sample every *step_size* beats. Sampling is
+      aligned to the tempo break points of every clock in the chain,
+      so an instantaneous tempo change stays sharp rather than
+      smearing into a short accelerando or ritardando.
 
    fast_forward(on_or_off: bool = True) -> None
 
@@ -10916,16 +10998,26 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
       master) and cascade to all descendant clocks.
 
       Pending scheduled work for this clock and its descendants is
-      cancelled and the clocks are marked dead. A clock currently
+      canceled and the clocks are marked dead. A clock currently
       blocked in "wait()" raises "ClockKilledError"; any later
-      "wait()" or "fork()" on a dead clock raises "DeadClockError".
-      Killing the master also tears down the family's scheduler.
+      "wait()" or "fork()" made through a reference to a dead clock
+      raises "DeadClockError".
+
+      Killing the master also tears down the family's scheduler, and
+      releases its owning thread: that thread's "current_clock()"
+      becomes "None", so the module-level helpers ("wait()", "fork()",
+      "get_beat()", ...) raise "NoActiveClockError" there rather than
+      reporting a dead clock.
+
+      Returns once the killed clocks have finished unwinding to ensure
+      synchronicity. Emits a warning if this takes more than a few
+      seconds.
 
       Safe to call from any thread, and killing an already-dead clock
       is a no-op.
 
       (See the "Clock termination / lifecycle paths" note near the top
-      of this module for how the four termination paths work
+      of this module for how the five termination paths work
       internally.)
 
    classmethod load_from_json(file_path: str) -> T
@@ -10943,7 +11035,7 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
       The master clock under which this clock operates (possibly
       itself)
 
-   new_midi_part(name: str = None, midi_output_device: int | str = None, num_channels: int = 8, midi_output_name: str = None, max_pitch_bend: int = 'default', note_on_and_off_only: bool = False, default_spelling_policy: SpellingPolicy = None, clef_preference='from_name', start_channel: int = 0, volume_cc_num: int = 11) -> ScampInstrument
+   new_midi_part(name: str = None, midi_output_device: int | str = None, num_channels: int = 8, midi_output_name: str = None, max_pitch_bend: int = 'default', start_note_fixed: bool = True, default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', start_channel: int = 0, volume_cc_num: int = 11, note_on_and_off_only: bool = False) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble that
       uses a MIDIStreamPlaybackImplementation. This means that when
@@ -10967,15 +11059,8 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
          * **max_pitch_bend** -- max pitch bend to use for this
            instrument
 
-         * **note_on_and_off_only** -- This enforces a rule of no
-           dynamic pitch bends, expression (volume) changes, or other
-           cc messages. Valuable when using "start_note" instead of
-           "play_note" in music that doesn't do any dynamic
-           pitch/volume/parameter changes. Without this flag, notes
-           will all be placed on separate MIDI channels, since they
-           could potentially change pitch or volume; with this flags,
-           we know they won't, so they can share the same MIDI
-           channels, only using an extra one due to microtonality.
+         * **start_note_fixed** -- default "start_note_fixed" for
+           notes started with "start_note()" on this part.
 
          * **default_spelling_policy** -- the
            "default_spelling_policy" for the new part
@@ -10992,10 +11077,13 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
          * **volume_cc_num** -- The cc value used for volume changes.
            Defaults to 11 (expression).
 
+         * **note_on_and_off_only** -- Deprecated; use
+           *start_note_fixed*.
+
       Returns:
          the newly created ScampInstrument
 
-   new_osc_part(name: str = None, port: int = None, ip_address: str = '127.0.0.1', message_prefix: str = None, osc_message_addresses: dict = 'default', default_spelling_policy: SpellingPolicy = None, clef_preference='from_name') -> ScampInstrument
+   new_osc_part(name: str = None, port: int = None, ip_address: str = '127.0.0.1', message_prefix: str = None, osc_message_addresses: dict = 'default', default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', start_note_fixed: bool = True) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble that
       uses a OSCPlaybackImplementation. This means that when notes are
@@ -11025,10 +11113,13 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
          * **clef_preference** -- the "clef_preference" for the new
            part
 
+         * **start_note_fixed** -- default "start_note_fixed" for
+           notes started with "start_note()" on this part.
+
       Returns:
          the newly created ScampInstrument
 
-   new_part(name: str = None, preset='auto', soundfont: str = 'default', num_channels: int = 8, audio_driver: str = 'default', max_pitch_bend: int = 'default', note_on_and_off_only: bool = False, default_spelling_policy: SpellingPolicy = None, clef_preference='from_name', volume_cc_num: int = 11) -> ScampInstrument
+   new_part(name: str = None, preset='auto', soundfont: str = 'default', num_channels: int = 8, audio_driver: str = 'default', max_pitch_bend: int = 'default', start_note_fixed: bool = True, default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', volume_cc_num: int = 11, note_on_and_off_only: bool = False) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble that
       uses a SoundfontPlaybackImplementation. Unless otherwise
@@ -11056,15 +11147,8 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
          * **max_pitch_bend** -- max pitch bend to use for this
            instrument
 
-         * **note_on_and_off_only** -- This enforces a rule of no
-           dynamic pitch bends, expression (volume) changes, or other
-           cc messages. Valuable when using "start_note" instead of
-           "play_note" in music that doesn't do any dynamic
-           pitch/volume/parameter changes. Without this flag, notes
-           will all be placed on separate MIDI channels, since they
-           could potentially change pitch or volume; with this flags,
-           we know they won't, so they can share the same MIDI
-           channels, only using an extra one due to microtonality.
+         * **start_note_fixed** -- default "start_note_fixed" for
+           notes started with "start_note()" on this part.
 
          * **default_spelling_policy** -- the
            "default_spelling_policy" for the new part
@@ -11075,10 +11159,13 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
          * **volume_cc_num** -- The cc value used for volume changes.
            Defaults to 11 (expression).
 
+         * **note_on_and_off_only** -- Deprecated; use
+           *start_note_fixed*.
+
       Returns:
          the newly created ScampInstrument
 
-   new_silent_part(name: str = None, default_spelling_policy: SpellingPolicy = None, clef_preference='from_name') -> ScampInstrument
+   new_silent_part(name: str = None, default_spelling_policy: SpellingPolicy | str | tuple = None, clef_preference='from_name', start_note_fixed: bool = True) -> ScampInstrument
 
       Creates and returns a new ScampInstrument for this Ensemble with
       no PlaybackImplementations.
@@ -11091,6 +11178,10 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
 
          * **clef_preference** -- the "clef_preference" for the new
            part
+
+         * **start_note_fixed** -- the "start_note_fixed" default for
+           the new part. Only relevant if adding a MIDI playback
+           implementation.
 
       Returns:
          the newly created ScampInstrument
@@ -11124,7 +11215,7 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
 
    projected_beat() -> float
 
-      A wall-clock-interpolated estimate of "beat()". See
+      A wall-clock-interpolated estimate of "beat". See
       "projected_time()".
 
       Returns:
@@ -11132,16 +11223,17 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
 
    projected_time() -> float
 
-      A wall-clock-interpolated estimate of "time()", advancing
-      smoothly between events rather than holding still between them.
-      For readers outside the clock system; see the section comment
-      above.
+      A wall-clock-interpolated estimate of "time", advancing smoothly
+      between events rather than holding still between them. For
+      readers outside the clock system; see the section comment above.
+      (A method rather than a property, because it is a live sample:
+      every call returns a different value.)
 
       This is an estimate, and it can step backward — see
       "projected_time()".
 
       Returns:
-         the estimated elapsed time, in the same units as "time()".
+         the estimated elapsed time, in the same units as "time".
 
    property rate: float
 
@@ -11473,7 +11565,17 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
       only in the master clock; otherwise it refers to beats in the
       parent clock.
 
-   time() -> float
+   terminate_forked_children() -> None
+
+      Kill this clock's children and their descendants in turn,
+      returning once they have finished unwinding. At the natural end
+      of a forked clock that has (or might have) still-active
+      children, either this or "wait_for_children_to_finish()" should
+      be called, making explicit what to do with those forked
+      children. (The default is termination with a warning, in case
+      it's not what the user wants.)
+
+   property time: float
 
       How much time has passed since this clock was created. Either in
       seconds, if this is the master clock, or in beats in the parent
@@ -11481,8 +11583,9 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
       this is quantized to the scheduler's event stream; for a live
       estimate when outside the clock system use "projected_time()".
 
-      Returns:
-         the elapsed time (see units above).
+      (Read-only property. Before clockblocks 1.1 this was a method;
+      the "clock.time()" spelling still works, with a
+      DeprecationWarning.)
 
    property timing_policy: float
 
@@ -11544,6 +11647,25 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
       "ClockKilledError" rather than returning — so a normal return
       always means the children genuinely finished.
 
+   wait_for_clock_to_finish(clock: Clock) -> None
+
+      Block this clock's own thread until *clock* has finished,
+      yielding to the scheduler so it (and everything else) keeps
+      running. The counterpart to "wait_for_children_to_finish()" for
+      a specific clock rather than one's own children — *clock* may be
+      any other clock in the same family (a sibling, a descendant, an
+      unrelated fork), so long as it shares this clock's scheduler.
+
+      Returns as soon as *clock* finishes, whether it ended on its own
+      or was killed. If *clock* has already finished, returns
+      immediately. If this clock is itself killed while waiting,
+      raises "ClockKilledError" rather than returning.
+
+      Parameters:
+         **clock** -- the clock to wait on. Must belong to the same
+         family (raises ValueError otherwise), and must not be this
+         clock itself (which would wait forever).
+
    wait_forever() -> None
 
       Block this clock's own thread indefinitely, yielding to the
@@ -11572,6 +11694,8 @@ class scamp.session.Session(tempo: float = 60, default_soundfont: str = 'default
       ResolvableMoment, in which case the units are ignored and
       behavior is identical to wait(). If *when* is in the past,
       returns essentially immediately.
+
+   description: str | None
 
 
 ======================================================================
@@ -11624,11 +11748,11 @@ through which nearly all of SCAMP's functionality flows.
 
     * "Session.start_transcribing()"
 
-    * "Session.absolute_beat_length()"
+    * "Session.absolute_beat_length"
 
-    * "Session.absolute_rate()"
+    * "Session.absolute_rate"
 
-    * "Session.absolute_tempo()"
+    * "Session.absolute_tempo"
 
     * "Session.add_instrument()"
 
@@ -11642,7 +11766,7 @@ through which nearly all of SCAMP's functionality flows.
 
     * "Session.apply_tempo_function()"
 
-    * "Session.beat()"
+    * "Session.beat"
 
     * "Session.beat_length"
 
@@ -11758,7 +11882,9 @@ through which nearly all of SCAMP's functionality flows.
 
     * "Session.tempo"
 
-    * "Session.time()"
+    * "Session.terminate_forked_children()"
+
+    * "Session.time"
 
     * "Session.timing_policy"
 
@@ -11774,9 +11900,13 @@ through which nearly all of SCAMP's functionality flows.
 
     * "Session.wait_for_children_to_finish()"
 
+    * "Session.wait_for_clock_to_finish()"
+
     * "Session.wait_forever()"
 
     * "Session.wait_until()"
+
+    * "Session.description"
 
 
 ======================================================================
@@ -11786,7 +11916,7 @@ through which nearly all of SCAMP's functionality flows.
 scamp.settings.EngravingSettings
 ********************************
 
-class scamp.settings.EngravingSettings(allow_duple_tuplets_in_compound_time: bool = False, max_voices_per_part: int = 4, max_dots_allowed: int = 3, beat_hierarchy_spacing: float = 2.4, num_divisions_penalty: float = 0.6, rest_beat_hierarchy_spacing: float = 20, rest_num_divisions_penalty: float = 0.2, articulation_split_protocols: dict = <factory>, notation_split_protocols: dict = <factory>, clefs_by_instrument: dict = <factory>, clef_pitch_centers: dict = <factory>, clef_selection_policy: str = 'measure-wise', default_titles: list | str | None = <factory>, default_composers: list | str | None = <factory>, default_spelling_policy: SpellingPolicy = <factory>, ignore_empty_parts: bool = True, glissandi: GlissandiSettings = <factory>, tempo: TempoSettings = <factory>, pad_incomplete_parts: bool = True, music_xml_open_command: str | None = <factory>, show_microtonal_annotations: bool = False, microtonal_annotation_digits: int = 2, export_note_velocities_to_xml: bool = False, lilypond_dir: str | None = <factory>, lilypond_search_paths: dict = <factory>)
+class scamp.settings.EngravingSettings(allow_duple_tuplets_in_compound_time: bool = False, max_voices_per_staff: int = 4, pitch_order_voices_within_measure: bool = True, max_dots_allowed: int = 3, beat_hierarchy_spacing: float = 2.4, num_divisions_penalty: float = 0.6, rest_beat_hierarchy_spacing: float = 20, rest_num_divisions_penalty: float = 0.2, articulation_split_protocols: dict = <factory>, notation_split_protocols: dict = <factory>, clefs_by_instrument: dict = <factory>, clef_pitch_centers: dict = <factory>, clef_selection_policy: str = 'measure-wise', default_titles: list | str | None = <factory>, default_composers: list | str | None = <factory>, default_spelling_policy: SpellingPolicy = <factory>, ignore_empty_parts: bool = True, glissandi: GlissandiSettings = <factory>, tempo: TempoSettings = <factory>, pad_incomplete_parts: bool = True, music_xml_open_command: str | None = <factory>, show_microtonal_annotations: bool = False, microtonal_annotation_digits: int = 2, export_note_velocities_to_xml: bool = False, lilypond_dir: str | None = <factory>, lilypond_search_paths: dict = <factory>)
 
    Bases: "_ScampSettings"
 
@@ -11805,9 +11935,18 @@ class scamp.settings.EngravingSettings(allow_duple_tuplets_in_compound_time: boo
         inside of a 2:3 tuplet. If this is set to True, we allow the
         latter option.
 
-      * **max_voices_per_part** -- integer specifying how many voices
-        we allow in a single staff before creating extra staves to
-        accommodate them.
+      * **max_voices_per_staff** -- integer (from 1 to 4) specifying
+        how many voices we allow in a single staff before creating
+        extra staves to accommodate them. (Formerly named
+        "max_voices_per_part", which still works but is deprecated.)
+
+      * **pitch_order_voices_within_measure** -- if True, voices
+        within a particular staff and measure are reordered according
+        to pitch (higher pitch = upper, stem-up voice) to reduce
+        crossed stems. A voice is only reordered at a barline no note
+        ties across, so ties are never broken. Set False to keep each
+        named voice in a fixed rendered voice number for its whole
+        duration.
 
       * **max_dots_allowed** -- integer specifying how many dots we
         allow a note to have before it's just too many dots.
@@ -11983,9 +12122,13 @@ class scamp.settings.EngravingSettings(allow_duple_tuplets_in_compound_time: boo
    | "max_dots_ |                                                                                            |
    | allowed"   |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "max_voice |                                                                                            |
+   | "max_voice | Deprecated alias for "max_voices_per_staff".                                               |
    | s_per_part |                                                                                            |
    | "          |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "max_voice |                                                                                            |
+   | s_per_staf |                                                                                            |
+   | f"         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "microtona |                                                                                            |
    | l_annotati |                                                                                            |
@@ -11998,6 +12141,11 @@ class scamp.settings.EngravingSettings(allow_duple_tuplets_in_compound_time: boo
    | "pad_incom |                                                                                            |
    | plete_part |                                                                                            |
    | s"         |                                                                                            |
+   +------------+--------------------------------------------------------------------------------------------+
+   | "pitch_ord |                                                                                            |
+   | er_voices_ |                                                                                            |
+   | within_mea |                                                                                            |
+   | sure"      |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "rest_beat |                                                                                            |
    | _hierarchy |                                                                                            |
@@ -12055,7 +12203,9 @@ class scamp.settings.EngravingSettings(allow_duple_tuplets_in_compound_time: boo
 
    allow_duple_tuplets_in_compound_time: bool = False
 
-   max_voices_per_part: int = 4
+   max_voices_per_staff: int = 4
+
+   pitch_order_voices_within_measure: bool = True
 
    max_dots_allowed: int = 3
 
@@ -12102,6 +12252,10 @@ class scamp.settings.EngravingSettings(allow_duple_tuplets_in_compound_time: boo
    lilypond_dir: str | None
 
    lilypond_search_paths: dict
+
+   property max_voices_per_part
+
+      Deprecated alias for "max_voices_per_staff".
 
    set_music_xml_application(application_name: str = None, persist: bool = False) -> None
 
@@ -12420,7 +12574,7 @@ class scamp.settings.GlissandiSettings(control_point_policy: str = 'split', cons
 scamp.settings.PlaybackSettings
 *******************************
 
-class scamp.settings.PlaybackSettings(named_soundfonts: dict = <factory>, soundfont_search_paths: list = <factory>, default_soundfont: str = 'general_midi', default_audio_driver: str | None = <factory>, default_max_soundfont_pitch_bend: int = 48, default_max_streaming_midi_pitch_bend: int = 2, soundfont_volume_to_velocity_curve: Envelope = <factory>, streaming_midi_volume_to_velocity_curve: Envelope = <factory>, osc_message_addresses: dict = <factory>, adjustments: dict = <factory>, try_system_fluidsynth_first: bool = <factory>, use_bundled_pyfluidsynth: bool = True, resize_parameter_envelopes: str = 'lists', recording_file_path: str | None = None, recording_time_range: list = <factory>)
+class scamp.settings.PlaybackSettings(named_soundfonts: dict = <factory>, soundfont_search_paths: list = <factory>, default_soundfont: str = 'general_midi', default_audio_driver: str | None = <factory>, default_max_soundfont_pitch_bend: int = 48, default_max_streaming_midi_pitch_bend: int = 2, soundfont_volume_to_velocity_curve: Envelope = <factory>, streaming_midi_volume_to_velocity_curve: Envelope = <factory>, osc_message_addresses: dict = <factory>, adjustments: dict = <factory>, try_system_fluidsynth_first: bool = <factory>, use_bundled_pyfluidsynth: bool = True, resize_parameter_envelopes: str = 'lists', animation_tick_interval: float = 0.02, recording_file_path: str | None = None, recording_time_range: list = <factory>)
 
    Bases: "_ScampSettings"
 
@@ -12498,6 +12652,14 @@ class scamp.settings.PlaybackSettings(named_soundfonts: dict = <factory>, soundf
         "lists" does this resizing only when the envelope was created
         indirectly by passing a list to the parameter.
 
+      * **animation_tick_interval** -- how often, in seconds, active
+        parameter animations (glissandi, volume swells, other animated
+        playback parameters) are sampled and applied to playback. A
+        single tick per clock family drives all concurrent animations,
+        so this is the one knob trading smoothness against overhead.
+        Note that it does not affect notation, which is reconstructed
+        from the exact envelopes regardless.
+
    -[ Methods ]-
 
    +------------+--------------------------------------------------------------------------------------------+
@@ -12569,6 +12731,10 @@ class scamp.settings.PlaybackSettings(named_soundfonts: dict = <factory>, soundf
 
    -[ Attributes ]-
 
+   +------------+--------------------------------------------------------------------------------------------+
+   | "animation |                                                                                            |
+   | _tick_inte |                                                                                            |
+   | rval"      |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
    | "default_m |                                                                                            |
    | ax_soundfo |                                                                                            |
@@ -12658,6 +12824,8 @@ class scamp.settings.PlaybackSettings(named_soundfonts: dict = <factory>, soundf
    use_bundled_pyfluidsynth: bool = True
 
    resize_parameter_envelopes: str = 'lists'
+
+   animation_tick_interval: float = 0.02
 
    recording_file_path: str | None = None
 
@@ -13008,7 +13176,7 @@ class scamp.settings.QuantizationSettings(onset_weighting: float = 1.0, terminat
 scamp.settings.TempoSettings
 ****************************
 
-class scamp.settings.TempoSettings(guide_mark_resolution: float = 0.125, guide_mark_sensitivity: float = 0.08, include_guide_marks: bool = True, parenthesize_guide_marks: bool = True)
+class scamp.settings.TempoSettings(guide_mark_resolution: float = 0.125, guide_mark_sensitivity: float = 0.08, include_guide_marks: bool = False, parenthesize_guide_marks: bool = True)
 
    Bases: "_ScampSettings"
 
@@ -13100,7 +13268,7 @@ class scamp.settings.TempoSettings(guide_mark_resolution: float = 0.125, guide_m
 
    guide_mark_sensitivity: float = 0.08
 
-   include_guide_marks: bool = True
+   include_guide_marks: bool = False
 
    parenthesize_guide_marks: bool = True
 
@@ -13257,7 +13425,9 @@ configuration.
 
     * "EngravingSettings.allow_duple_tuplets_in_compound_time"
 
-    * "EngravingSettings.max_voices_per_part"
+    * "EngravingSettings.max_voices_per_staff"
+
+    * "EngravingSettings.pitch_order_voices_within_measure"
 
     * "EngravingSettings.max_dots_allowed"
 
@@ -13304,6 +13474,8 @@ configuration.
     * "EngravingSettings.lilypond_dir"
 
     * "EngravingSettings.lilypond_search_paths"
+
+    * "EngravingSettings.max_voices_per_part"
 
     * "EngravingSettings.set_music_xml_application()"
 
@@ -13396,6 +13568,8 @@ configuration.
     * "PlaybackSettings.use_bundled_pyfluidsynth"
 
     * "PlaybackSettings.resize_parameter_envelopes"
+
+    * "PlaybackSettings.animation_tick_interval"
 
     * "PlaybackSettings.recording_file_path"
 
@@ -13556,8 +13730,8 @@ class scamp.spanners.ChangePedal(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -13601,7 +13775,8 @@ class scamp.spanners.ChangePedal(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -13691,8 +13866,8 @@ class scamp.spanners.Spanner(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -13732,7 +13907,8 @@ class scamp.spanners.Spanner(label: Any = 0, **formatting)
 
    abstractmethod to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    abstractmethod to_abjad()
 
@@ -13811,8 +13987,8 @@ class scamp.spanners.StartBracket(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -13856,7 +14032,8 @@ class scamp.spanners.StartBracket(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -13939,8 +14116,8 @@ class scamp.spanners.StartDashes(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -13980,7 +14157,8 @@ class scamp.spanners.StartDashes(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14057,8 +14235,8 @@ class scamp.spanners.StartHairpin(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14102,7 +14280,8 @@ class scamp.spanners.StartHairpin(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14184,8 +14363,8 @@ class scamp.spanners.StartPedal(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14229,7 +14408,8 @@ class scamp.spanners.StartPedal(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14313,8 +14493,8 @@ class scamp.spanners.StartPhrasingSlur(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14358,7 +14538,8 @@ class scamp.spanners.StartPhrasingSlur(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14435,8 +14616,8 @@ class scamp.spanners.StartSlur(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14480,7 +14661,8 @@ class scamp.spanners.StartSlur(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14558,8 +14740,8 @@ class scamp.spanners.StartTrill(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14603,7 +14785,8 @@ class scamp.spanners.StartTrill(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14682,8 +14865,8 @@ class scamp.spanners.StopBracket(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14727,7 +14910,8 @@ class scamp.spanners.StopBracket(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14804,8 +14988,8 @@ class scamp.spanners.StopDashes(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14849,7 +15033,8 @@ class scamp.spanners.StopDashes(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -14927,8 +15112,8 @@ class scamp.spanners.StopHairpin(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -14972,7 +15157,8 @@ class scamp.spanners.StopHairpin(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -15050,8 +15236,8 @@ class scamp.spanners.StopPedal(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -15095,7 +15281,8 @@ class scamp.spanners.StopPedal(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -15172,8 +15359,8 @@ class scamp.spanners.StopPhrasingSlur(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -15217,7 +15404,8 @@ class scamp.spanners.StopPhrasingSlur(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -15294,8 +15482,8 @@ class scamp.spanners.StopSlur(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -15339,7 +15527,8 @@ class scamp.spanners.StopSlur(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -15416,8 +15605,8 @@ class scamp.spanners.StopTrill(label: Any = 0, **formatting)
    | "to_abjad" | Converts this to an abjad indicator.                                                       |
    | ()         |                                                                                            |
    +------------+--------------------------------------------------------------------------------------------+
-   | "to_pymusi | Converts this to a pymusicxml spanner type.                                                |
-   | cxml"()    |                                                                                            |
+   | "to_pymusi | Converts this to a pymusicxml spanner type (or None if it has no note-attached MusicXML    |
+   | cxml"()    | form).                                                                                     |
    +------------+--------------------------------------------------------------------------------------------+
 
    -[ Inherited Methods ]-
@@ -15461,7 +15650,8 @@ class scamp.spanners.StopTrill(label: Any = 0, **formatting)
 
    to_pymusicxml()
 
-      Converts this to a pymusicxml spanner type.
+      Converts this to a pymusicxml spanner type (or None if it has no
+      note-attached MusicXML form).
 
    to_abjad()
 
@@ -16605,32 +16795,6 @@ class scamp.utilities.NoteProperty
 
 
 ======================================================================
-=== FILE: scamp/scamp.utilities.beat_is_after.txt
-======================================================================
-
-scamp.utilities.beat_is_after
-*****************************
-
-scamp.utilities.beat_is_after(a: float, b: float, tolerance: float = 1e-10) -> bool
-
-   True if beat "a" falls meaningfully after beat "b" (mirror of
-   "beat_is_before()").
-
-
-======================================================================
-=== FILE: scamp/scamp.utilities.beat_is_before.txt
-======================================================================
-
-scamp.utilities.beat_is_before
-******************************
-
-scamp.utilities.beat_is_before(a: float, b: float, tolerance: float = 1e-10) -> bool
-
-   True if beat *a* falls meaningfully before beat *b* — i.e. *a < b*
-   by more than *tolerance*, not merely by reconstruction noise.
-
-
-======================================================================
 === FILE: scamp/scamp.utilities.ceil_to_multiple.txt
 ======================================================================
 
@@ -16761,6 +16925,32 @@ scamp.utilities.indigestibility(n: int) -> float
    Returns the indigestibility of a number per the theories of
    Clarence Barlow. (See "On Musiquantics", http://clarlow.org/wp-
    content/uploads/2016/10/On-MusiquanticsA4.pdf)
+
+
+======================================================================
+=== FILE: scamp/scamp.utilities.is_after.txt
+======================================================================
+
+scamp.utilities.is_after
+************************
+
+scamp.utilities.is_after(a: float, b: float, tolerance: float = 1e-10) -> bool
+
+   True if beat "a" falls meaningfully after beat "b" (mirror of
+   "is_before()").
+
+
+======================================================================
+=== FILE: scamp/scamp.utilities.is_before.txt
+======================================================================
+
+scamp.utilities.is_before
+*************************
+
+scamp.utilities.is_before(a: float, b: float, tolerance: float = 1e-10) -> bool
+
+   True if beat *a* falls meaningfully before beat *b* — i.e. *a < b*
+   by more than *tolerance*, not merely by reconstruction noise.
 
 
 ======================================================================
@@ -16996,16 +17186,6 @@ Various and sundry utility functions used by SCAMP.
 -[ Functions ]-
 
 +------------+--------------------------------------------------------------------------------------------+
-| "beat_is_a | True if beat "a" falls meaningfully after beat "b" (mirror of "beat_is_before()").         |
-| fter"(a,   |                                                                                            |
-| b[, tolera |                                                                                            |
-| nce])      |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-| "beat_is_b | True if beat *a* falls meaningfully before beat *b* — i.e. *a < b* by more than            |
-| efore"(a,  | *tolerance*, not merely by reconstruction noise.                                           |
-| b[, tolera |                                                                                            |
-| nce])      |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
 | "ceil_to_m | Returns the multiple of factor that is closest above x.                                    |
 | ultiple"(x |                                                                                            |
 | , factor)  |                                                                                            |
@@ -17040,6 +17220,14 @@ Various and sundry utility functions used by SCAMP.
 +------------+--------------------------------------------------------------------------------------------+
 | "indigesti | Returns the indigestibility of a number per the theories of Clarence Barlow.               |
 | bility"(n) |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "is_after" | True if beat "a" falls meaningfully after beat "b" (mirror of "is_before()").              |
+| (a, b[, to |                                                                                            |
+| lerance])  |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "is_before | True if beat *a* falls meaningfully before beat *b* — i.e. *a < b* by more than            |
+| "(a, b[, t | *tolerance*, not merely by reconstruction noise.                                           |
+| olerance]) |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
 | "is_multip | Checks if x is a multiple of y.                                                            |
 | le"(x, y)  |                                                                                            |
@@ -17089,14 +17277,6 @@ Various and sundry utility functions used by SCAMP.
 | d_list"(l) |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
 
-* scamp.utilities.beat_is_after
-
-  * "beat_is_after()"
-
-* scamp.utilities.beat_is_before
-
-  * "beat_is_before()"
-
 * scamp.utilities.ceil_to_multiple
 
   * "ceil_to_multiple()"
@@ -17128,6 +17308,14 @@ Various and sundry utility functions used by SCAMP.
 * scamp.utilities.indigestibility
 
   * "indigestibility()"
+
+* scamp.utilities.is_after
+
+  * "is_after()"
+
+* scamp.utilities.is_before
+
+  * "is_before()"
 
 * scamp.utilities.is_multiple
 
@@ -17356,6 +17544,12 @@ resources for playback and notation.
       * "ScampInstrument.set_max_pitch_bend()"
 
       * "ScampInstrument.send_midi_cc()"
+
+      * "ScampInstrument.pedal_down()"
+
+      * "ScampInstrument.pedal_up()"
+
+      * "ScampInstrument.pedal_change()"
 
       * "ScampInstrument.clef_preference"
 
@@ -18223,11 +18417,11 @@ resources for playback and notation.
 
       * "Session.start_transcribing()"
 
-      * "Session.absolute_beat_length()"
+      * "Session.absolute_beat_length"
 
-      * "Session.absolute_rate()"
+      * "Session.absolute_rate"
 
-      * "Session.absolute_tempo()"
+      * "Session.absolute_tempo"
 
       * "Session.add_instrument()"
 
@@ -18241,7 +18435,7 @@ resources for playback and notation.
 
       * "Session.apply_tempo_function()"
 
-      * "Session.beat()"
+      * "Session.beat"
 
       * "Session.beat_length"
 
@@ -18357,7 +18551,9 @@ resources for playback and notation.
 
       * "Session.tempo"
 
-      * "Session.time()"
+      * "Session.terminate_forked_children()"
+
+      * "Session.time"
 
       * "Session.timing_policy"
 
@@ -18373,9 +18569,13 @@ resources for playback and notation.
 
       * "Session.wait_for_children_to_finish()"
 
+      * "Session.wait_for_clock_to_finish()"
+
       * "Session.wait_forever()"
 
       * "Session.wait_until()"
+
+      * "Session.description"
 
 * scamp.settings
 
@@ -18385,7 +18585,9 @@ resources for playback and notation.
 
       * "EngravingSettings.allow_duple_tuplets_in_compound_time"
 
-      * "EngravingSettings.max_voices_per_part"
+      * "EngravingSettings.max_voices_per_staff"
+
+      * "EngravingSettings.pitch_order_voices_within_measure"
 
       * "EngravingSettings.max_dots_allowed"
 
@@ -18432,6 +18634,8 @@ resources for playback and notation.
       * "EngravingSettings.lilypond_dir"
 
       * "EngravingSettings.lilypond_search_paths"
+
+      * "EngravingSettings.max_voices_per_part"
 
       * "EngravingSettings.set_music_xml_application()"
 
@@ -18524,6 +18728,8 @@ resources for playback and notation.
       * "PlaybackSettings.use_bundled_pyfluidsynth"
 
       * "PlaybackSettings.resize_parameter_envelopes"
+
+      * "PlaybackSettings.animation_tick_interval"
 
       * "PlaybackSettings.recording_file_path"
 
@@ -19101,14 +19307,6 @@ resources for playback and notation.
 
     * "NoteProperty"
 
-  * scamp.utilities.beat_is_after
-
-    * "beat_is_after()"
-
-  * scamp.utilities.beat_is_before
-
-    * "beat_is_before()"
-
   * scamp.utilities.ceil_to_multiple
 
     * "ceil_to_multiple()"
@@ -19140,6 +19338,14 @@ resources for playback and notation.
   * scamp.utilities.indigestibility
 
     * "indigestibility()"
+
+  * scamp.utilities.is_after
+
+    * "is_after()"
+
+  * scamp.utilities.is_before
+
+    * "is_before()"
 
   * scamp.utilities.is_multiple
 
@@ -19265,12 +19471,16 @@ resources for playback and notation.
 | "DeadClock | Raised when something tries to wait or fork on a clock that's no longer ALIVE (either      |
 | Error"     | killed already, or — for fork — still PENDING in its start_delay).                         |
 +------------+--------------------------------------------------------------------------------------------+
-| "NoActiveC | Raised when a clock operation (the module-level wait/fork/etc.) is attempted from a thread |
-| lockError" | that has no clock active on it.                                                            |
+| "NoActiveC | Raised when a context-inferring clock operation (the module-level wait/fork/etc.) is       |
+| lockError" | attempted from a thread that has no clock active on it.                                    |
 +------------+--------------------------------------------------------------------------------------------+
 | "NotMaster | Raised by operations that are only valid on the master (top-level) clock — e.g.            |
 | ClockError | run_as_server() — when called on a child clock.                                            |
 | "          |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "Scheduler | Raised when wait() is called from a thread that is holding the scheduler via               |
+| HeldError" | hold_scheduler() — most commonly inside a MIDI / OSC / HID callback, which runs under such |
+|            | a hold.                                                                                    |
 +------------+--------------------------------------------------------------------------------------------+
 | "WrongThre | Raised when wait() is called from a thread that doesn't own the clock.                     |
 | adError"   |                                                                                            |
@@ -19325,6 +19535,9 @@ resources for playback and notation.
 | name,      |                                                                                            |
 | ...])      |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
+| "get_beat" | Return how many beats have passed on the currently active clock (see "beat").              |
+| ()         |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
 | "get_beat_ | Return the current beat length (in seconds per beat) of the currently active clock (see    |
 | length"()  | "beat_length").                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
@@ -19333,6 +19546,9 @@ resources for playback and notation.
 +------------+--------------------------------------------------------------------------------------------+
 | "get_tempo | Return the current tempo (in beats per minute) of the currently active clock (see          |
 | "()        | "tempo").                                                                                  |
++------------+--------------------------------------------------------------------------------------------+
+| "get_time" | Return how much time has passed on the currently active clock (see "time") — in seconds if |
+| ()         | it is the master clock, or parent clock beats if it is a forked child clock.               |
 +------------+--------------------------------------------------------------------------------------------+
 | "set_beat_ | Immediately set the beat length of the current clock (see "beat_length").                  |
 | length"(be |                                                                                            |
@@ -19387,6 +19603,10 @@ resources for playback and notation.
 | function"( | nction()"/"apply_beat_length_function()" or a looping "apply_tempo_envelope()").           |
 | )          |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
+| "terminate | Kill the child clocks of the currently active clock, returning once they have finished     |
+| _forked_ch | unwinding (see "terminate_forked_children()").                                             |
+| ildren"()  |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
 | "wait"(dt[ | Block the clock currently active on this thread for "dt" beats (or seconds, if             |
 | , units])  | "units="time""), yielding to the scheduler.                                                |
 +------------+--------------------------------------------------------------------------------------------+
@@ -19395,8 +19615,17 @@ resources for playback and notation.
 | o_finish"( |                                                                                            |
 | )          |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
+| "wait_for_ | Block on the currently active clock until *clock* has finished (see                        |
+| clock_to_f | "wait_for_clock_to_finish()").                                                             |
+| inish"(clo |                                                                                            |
+| ck)        |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
 | "wait_fore | Block forever on the currently active clock (see "wait_forever()") — usually to keep the   |
 | ver"()     | main script alive while child clocks do the work.                                          |
++------------+--------------------------------------------------------------------------------------------+
+| "wait_unti | Block the clock currently active on this thread until the *absolute* beat (or time, if     |
+| l"(when[,  | "units="time"") given by "when".                                                           |
+| units])    |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
 | "Envelope" | Class representing a piece-wise exponential function.                                      |
 | ([levels,  |                                                                                            |

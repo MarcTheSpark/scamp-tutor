@@ -1,7 +1,7 @@
 
 
 ======================================================================
-=== FILE: Tutorial/01_hello_world.py
+=== FILE: scamp:Tutorial/01_hello_world.py
 ======================================================================
 
 """
@@ -28,27 +28,27 @@ Plays a C major arpeggio.
 
 # import the scamp namespace
 from scamp import *
+
 # construct a session object
 s = Session()
-# add a new s part to the session
+
+# add a new violin part to the session
 violin = s.new_part("Violin")
-# looping through the MIDI pitches
-# of a C major arpeggio...
+
+# looping through the MIDI pitches of a C major arpeggio...
 for pitch in [60, 64, 67, 72]:
-    # play each pitch sequentially
-    # with volume of 1 (full volume)
-    # and duration of half a beat
+    # play each pitch sequentially, with volume 1 (full volume), and duration of half a beat
     violin.play_note(pitch, 1, 0.5)
 
 
 ======================================================================
-=== FILE: Tutorial/02_tempo_change.py
+=== FILE: scamp:Tutorial/02_tempo_change.py
 ======================================================================
 
 """
 SCAMP Example: Tempo Change
 
-Same as Hello World example, but at half-tempo.
+Same as Hello World example, but repeatedly, with changing tempi.
 """
 
 #  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
@@ -67,33 +67,41 @@ Same as Hello World example, but at half-tempo.
 #  If not, see <http://www.gnu.org/licenses/>.                                                   #
 #  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
 
-# import the scamp namespace
 from scamp import *
-# construct a session object
+
 s = Session()
-# change to half of default tempo
-s.tempo = 30
+
+# Start with an initial tempo of 100
+s.tempo = 100
 
 # add a new violin part to the session
 violin = s.new_part("Violin")
-# looping through the MIDI pitches
-# of a C major arpeggio...
+
+
 for pitch in [60, 64, 67, 72]:
-    # play each pitch sequentially
-    # with volume of 1 (full volume)
-    # and duration of half a beat
     violin.play_note(pitch, 1, 0.5)
 
+# you can change tempo at any time; not just at the beginning
+s.tempo = 40
+for pitch in [60, 64, 67, 72]:
+    violin.play_note(pitch, 1, 0.5)
+
+# you can also do an accelerando/decelerando, specifying
+# a moment at which to reach the goal tempo
+set_tempo_target(150, Moment.after_beats(6))
+for pitch in [60, 64, 67, 72] * 4:
+    violin.play_note(pitch, 1, 0.5)
 
 ======================================================================
-=== FILE: Tutorial/03_blocking_false.py
+=== FILE: scamp:Tutorial/03_blocking_false.py
 ======================================================================
 
 """
 SCAMP Example: Blocking False
 
-Demonstrating the ability to have non-blocking calls to play_note. This plays two notes that each last
-for two beats, but overlapping by one beat. Passing `blocking=False` is essentially a single-note fork:
+By default `play_note` blocks execution until the note is done playing. This is very useful for playing a melody,
+since you simply call `play_note` in sequence for every note of the melody. However, one simple way of allowing notes
+to overlap — if desired — is to pass the keyword argument `blocking=False`. This is essentially a single-note fork:
 playback continues on to the next line without waiting for the note to finish.
 """
 
@@ -127,9 +135,19 @@ wait(1)
 # start playing a 2-beat E, blocking this time
 violin.play_note(64, 1, 2)
 
+for pitch in [67, 72, 60, 64, 67, 72]:
+    # play notes that are a whole beat long...
+    violin.play_note(pitch, 1, 1, blocking=False)
+    # ...waiting only half a beat in between
+    wait(0.5)
+
+# a note is still playing when we reach the end of the script.
+# Without this line, it gets cut off prematurely; this keeps the script alive until it finished
+wait_for_children_to_finish()
+
 
 ======================================================================
-=== FILE: Tutorial/04_play_chord.py
+=== FILE: scamp:Tutorial/04_play_chord.py
 ======================================================================
 
 """
@@ -181,7 +199,7 @@ for _ in range(8):
 
 
 ======================================================================
-=== FILE: Tutorial/05_random_durations_and_rests.py
+=== FILE: scamp:Tutorial/05_random_durations_and_rests.py
 ======================================================================
 
 """
@@ -233,7 +251,7 @@ for _ in range(2):  # loop twice
 
 
 ======================================================================
-=== FILE: Tutorial/06_notation.py
+=== FILE: scamp:Tutorial/06_notation.py
 ======================================================================
 
 """
@@ -305,7 +323,7 @@ performance.to_score().print_music_xml()
 
 
 ======================================================================
-=== FILE: Tutorial/07_time_signature.py
+=== FILE: scamp:Tutorial/07_time_signature.py
 ======================================================================
 
 """
@@ -368,7 +386,7 @@ performance.to_score(bar_line_locations=[1.5, 3.5, 8],
 
 
 ======================================================================
-=== FILE: Tutorial/08_random_quantized.py
+=== FILE: scamp:Tutorial/08_random_quantized.py
 ======================================================================
 
 """
@@ -423,7 +441,7 @@ performance.to_score(time_signature="3/4").show()
 
 
 ======================================================================
-=== FILE: Tutorial/09_simplified_quantization.py
+=== FILE: scamp:Tutorial/09_simplified_quantization.py
 ======================================================================
 
 """
@@ -484,7 +502,7 @@ performance.to_score(time_signature="3/4", simplicity_preference=3, title="Stron
 
 
 ======================================================================
-=== FILE: Tutorial/10_multi_part.py
+=== FILE: scamp:Tutorial/10_multi_part.py
 ======================================================================
 
 """
@@ -554,7 +572,76 @@ performance.to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/11_nested_tempi/nested_tempi_child_clock.py
+=== FILE: scamp:Tutorial/11_nested_tempi/nested_tempi.py
+======================================================================
+
+"""
+SCAMP Example: Nested Tempi (Recorded on Session)
+
+Recorded from the session/master clock.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see <http://www.gnu.org/licenses/>.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import itertools
+
+s = Session()
+
+trumpet = s.new_part("trumpet", default_spelling_policy="c phrygian")
+trombone = s.new_part("trombone", default_spelling_policy="c phrygian", clef_preference="bass")
+
+trumpet_note_pattern = itertools.cycle([67, 72, 67, 68])
+trombone_note_pattern = itertools.cycle([60, 55, 48, 49, 48])
+
+
+# A forked function runs on its own child clock, nested under the session that forked it.
+def trumpet_part():
+    # play the trumpet figure in eighth notes until the session reaches beat 3
+    while s.beat < 3:
+        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
+
+    # slow this child clock to half its current rate over the next 7 beats of the parent
+    # note that this doesn't necessarily mean that we will land on the beat in this child clock
+    # `align_to=MetricPhaseTarget(0)` is what ensures that that happens.
+    set_rate_target(0.5, Moment.after_time(7), align_to=MetricPhaseTarget(0))
+
+    # keep playing eighth notes until the session reaches beat 16
+    while s.beat < 16:
+        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
+
+
+# speed the whole session up to 100 BPM over its first 14 beats
+s.set_tempo_target(100, Moment.after_beats(14))
+s.fork(trumpet_part)
+# transcribe from the session's main timeline -- the default when no clock is given
+s.start_transcribing()
+
+# play the trombone figure in quarter notes until the session reaches beat 16
+while s.beat < 16:
+    trombone.play_note(next(trombone_note_pattern), 1, 1)
+
+# Stop recording and show the result
+performance = s.stop_transcribing()
+performance.to_score(time_signature="3/4").show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/11_nested_tempi/nested_tempi_child_clock.py
 ======================================================================
 
 """
@@ -624,76 +711,7 @@ performance.to_score(time_signature="3/4").show()
 
 
 ======================================================================
-=== FILE: Tutorial/11_nested_tempi/nested_tempi.py
-======================================================================
-
-"""
-SCAMP Example: Nested Tempi (Recorded on Session)
-
-Recorded from the session/master clock.
-"""
-
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
-#  Copyright © 2020 Marc Evanstein <marc@marcevanstein.com>.                                     #
-#                                                                                                #
-#  This program is free software: you can redistribute it and/or modify it under the terms of    #
-#  the GNU General Public License as published by the Free Software Foundation, either version   #
-#  3 of the License, or (at your option) any later version.                                      #
-#                                                                                                #
-#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
-#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
-#  See the GNU General Public License for more details.                                          #
-#                                                                                                #
-#  You should have received a copy of the GNU General Public License along with this program.    #
-#  If not, see <http://www.gnu.org/licenses/>.                                                   #
-#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
-
-from scamp import *
-import itertools
-
-s = Session()
-
-trumpet = s.new_part("trumpet", default_spelling_policy="c phrygian")
-trombone = s.new_part("trombone", default_spelling_policy="c phrygian", clef_preference="bass")
-
-trumpet_note_pattern = itertools.cycle([67, 72, 67, 68])
-trombone_note_pattern = itertools.cycle([60, 55, 48, 49, 48])
-
-
-# A forked function runs on its own child clock, nested under the session that forked it.
-def trumpet_part():
-    # play the trumpet figure in eighth notes until the session reaches beat 3
-    while s.beat < 3:
-        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
-
-    # slow this child clock to half its current rate over the next 7 beats of the parent
-    # note that this doesn't necessarily mean that we will land on the beat in this child clock
-    # `align_to=MetricPhaseTarget(0)` is what ensures that that happens.
-    set_rate_target(0.5, Moment.after_time(7), align_to=MetricPhaseTarget(0))
-
-    # keep playing eighth notes until the session reaches beat 16
-    while s.beat < 16:
-        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
-
-
-# speed the whole session up to 100 BPM over its first 14 beats
-s.set_tempo_target(100, Moment.after_beats(14))
-s.fork(trumpet_part)
-# transcribe from the session's main timeline -- the default when no clock is given
-s.start_transcribing()
-
-# play the trombone figure in quarter notes until the session reaches beat 16
-while s.beat < 16:
-    trombone.play_note(next(trombone_note_pattern), 1, 1)
-
-# Stop recording and show the result
-performance = s.stop_transcribing()
-performance.to_score(time_signature="3/4").show()
-
-
-======================================================================
-=== FILE: Tutorial/12_envelopes_basic.py
+=== FILE: scamp:Tutorial/12_envelopes_basic.py
 ======================================================================
 
 """
@@ -733,7 +751,7 @@ e.show_plot("Uneven with Shaping")
 
 
 ======================================================================
-=== FILE: Tutorial/13_envelopes_advanced.py
+=== FILE: scamp:Tutorial/13_envelopes_advanced.py
 ======================================================================
 
 """
@@ -827,7 +845,7 @@ attack_sustain_release_envelope.show_plot("Prepending Envelope")
 
 
 ======================================================================
-=== FILE: Tutorial/14_gliss_from_envelope.py
+=== FILE: scamp:Tutorial/14_gliss_from_envelope.py
 ======================================================================
 
 """
@@ -870,7 +888,7 @@ s.stop_transcribing().to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/15_envelope_shorthand.py
+=== FILE: scamp:Tutorial/15_envelope_shorthand.py
 ======================================================================
 
 """
@@ -920,7 +938,7 @@ performance.to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/16_start_and_end_note.py
+=== FILE: scamp:Tutorial/16_start_and_end_note.py
 ======================================================================
 
 """
@@ -955,11 +973,12 @@ violin = s.new_part("violin")
 
 s.start_transcribing()
 
-# start a violin note on middle C with volume 1
-note_handle1 = violin.start_note(60, 1.0)
+# start a violin note on middle C with volume 1. By default a started note is fully fixed (it plays at the given
+# velocity and can't change); pass fixed=False so we can gliss its pitch.
+note_handle1 = violin.start_note(60, 1.0, fixed=False)
 wait(1)
 # after 1 second, start a chord on Bb4 / D5 / F#5 with volume 1
-note_handle2 = violin.start_chord([70, 74, 78], 1.0)
+note_handle2 = violin.start_chord([70, 74, 78], 1.0, fixed=False)
 # change the pitch of the first note to F#3, glissing over the course of 2 seconds
 note_handle1.change_pitch(54, 2.0)
 wait(1)
@@ -978,7 +997,7 @@ s.stop_transcribing().to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/17_volume_envelope.py
+=== FILE: scamp:Tutorial/17_volume_envelope.py
 ======================================================================
 
 """
@@ -1024,7 +1043,7 @@ viola.play_note(48, fp_cresc, 4)
 
 
 ======================================================================
-=== FILE: Tutorial/18_microtonal.py
+=== FILE: scamp:Tutorial/18_microtonal.py
 ======================================================================
 
 """
@@ -1071,7 +1090,7 @@ s.stop_transcribing().to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/19_playback_implementations.py
+=== FILE: scamp:Tutorial/19_playback_implementations.py
 ======================================================================
 
 """
@@ -1140,7 +1159,7 @@ s.stop_transcribing().to_score(time_signature="2/4").show()
 
 
 ======================================================================
-=== FILE: Tutorial/20_note_properties.py
+=== FILE: scamp:Tutorial/20_note_properties.py
 ======================================================================
 
 """
@@ -1241,7 +1260,7 @@ s.stop_transcribing().to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/21_pitch_spelling.py
+=== FILE: scamp:Tutorial/21_pitch_spelling.py
 ======================================================================
 
 """
@@ -1313,7 +1332,7 @@ s.stop_transcribing().to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/22_staff_text.py
+=== FILE: scamp:Tutorial/22_staff_text.py
 ======================================================================
 
 """
@@ -1370,7 +1389,7 @@ performance.to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/23_special_notations.py
+=== FILE: scamp:Tutorial/23_special_notations.py
 ======================================================================
 
 """
@@ -1432,7 +1451,7 @@ performance.to_score().show()
 
 
 ======================================================================
-=== FILE: Tutorial/24_osc_to_supercollider/osc_to_supercollider.py
+=== FILE: scamp:Tutorial/24_osc_to_supercollider/osc_to_supercollider.py
 ======================================================================
 
 """
@@ -1491,45 +1510,17 @@ while s.beat < 20:
     )
     wait(random.uniform(0.5, 3))
 
-while vib.num_notes_playing() > 0:
-    wait(1)
+wait_for_children_to_finish()
 
 performance = s.stop_transcribing()
+
 engraving_settings.max_voices_per_staff = 1
 performance.to_score(max_divisor=6, simplicity_preference=3).show()
 
 
 
 ======================================================================
-=== FILE: Tutorial/24_osc_to_supercollider/receive_from_supercollider_scamputils.scd
-======================================================================
-
-// --------------------------------------------------------------------------------------------------
-// Corresponding SuperCollider Code for OSC-to-SuperCollider SCAMP example. Run this before the Python
-// script by booting the server and then running the code blocks below in order.
-// --------------------------------------------------------------------------------------------------
-
-
-// If it's not working, make sure the port printed here matches the port that the Python file is sending to
-NetAddr.langPort.postln;
-
-
-(
-// ----------------------------- 1) Define vib synth ----------------------------------
-ScampUtils.instrumentFromSynthDef(
-	SynthDef(\vibSynth, { |out=0, freq=440, volume=0.1, vibFreq=20, vibWidth=0.5, gate=1|
-		var envelope = EnvGen.ar(Env.asr(releaseTime:0.5), gate, doneAction: 2);
-		var vibHalfSteps = SinOsc.ar(vibFreq) * vibWidth;
-		var vibFreqMul = 2.pow(vibHalfSteps / 12);
-		var vibSine =  SinOsc.ar(freq * vibFreqMul) * volume;
-		Out.ar(out, (envelope * vibSine / 5) ! 2);
-	}, [\ir, 0.1, 0.1, 0.1, 0.1, \kr]);
-)
-)
-
-
-======================================================================
-=== FILE: Tutorial/24_osc_to_supercollider/receive_from_supercollider.scd
+=== FILE: scamp:Tutorial/24_osc_to_supercollider/receive_from_supercollider.scd
 ======================================================================
 
 // --------------------------------------------------------------------------------------------------
@@ -1604,14 +1595,43 @@ OSCFunc({ arg msg, time, addr, recvPort;
 
 
 ======================================================================
-=== FILE: Tutorial/25_MIDI_in_out.py
+=== FILE: scamp:Tutorial/24_osc_to_supercollider/receive_from_supercollider_scamputils.scd
+======================================================================
+
+// --------------------------------------------------------------------------------------------------
+// Corresponding SuperCollider Code for OSC-to-SuperCollider SCAMP example. Run this before the Python
+// script by booting the server and then running the code blocks below in order.
+// --------------------------------------------------------------------------------------------------
+
+
+// If it's not working, make sure the port printed here matches the port that the Python file is sending to
+NetAddr.langPort.postln;
+
+
+(
+// ----------------------------- 1) Define vib synth ----------------------------------
+ScampUtils.instrumentFromSynthDef(
+	SynthDef(\vibrato, { |out=0, freq=440, volume=0.1, vibFreq=20, vibWidth=0.5, gate=1|
+		var envelope = EnvGen.ar(Env.asr(releaseTime:0.5), gate, doneAction: 2);
+		var vibHalfSteps = SinOsc.ar(vibFreq) * vibWidth;
+		var vibFreqMul = 2.pow(vibHalfSteps / 12);
+		var vibSine =  SinOsc.ar(freq * vibFreqMul) * volume;
+		Out.ar(out, (envelope * vibSine / 5) ! 2);
+	}, [\ir, 0.1, 0.1, 0.1, 0.1, \kr]);
+)
+)
+
+
+======================================================================
+=== FILE: scamp:Tutorial/25_MIDI_in_out.py
 ======================================================================
 
 """
-SCAMP EXAMPLE: Live MIDI input and output
+SCAMP Example: Live MIDI input and output
 
-Demonstration of receiving and sending live midi input to and from a midi keyboard. Every note received by the keyboard
-is immediately sent back to the keyboard a perfect fifth higher.
+Demonstration of receiving and sending live midi input to and from a midi keyboard.
+Every note received by the keyboard is echoed back to the midi device half a second later
+at 75% volume.
 """
 
 #  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
@@ -1636,19 +1656,40 @@ s = Session()
 
 s.print_available_midi_output_devices()
 
-piano = s.new_midi_part("piano", midi_output_device=0, num_channels=15)
+# This assumes we want the first listed MIDI device.
+# To use a different device, give the number or name that
+# you get from printing available devices above.
+piano = s.new_midi_part("piano", midi_output_device=0,
+                        num_channels=15)
+
 
 # dictionary mapping keys that are down to the NoteHandles used to manipulate them.
 notes_started = {}
 
 
-def midi_callback(midi_message):
-    code, pitch, volume = midi_message
-    if volume > 0 and 144 <= code <= 159:
-        notes_started[pitch] = piano.start_note(pitch + 7, volume/127)
-    elif (volume == 0 and 144 <= code <= 159 or 128 <= code <= 143) and pitch in notes_started:
+def start_note(pitch, volume):
+    # start the copy-cat note and store the handle to it to end it later
+    notes_started[pitch] = piano.start_note(pitch, volume)
+
+
+def end_note(pitch):
+    # end the copy-cat note (if one has started)
+    if pitch in notes_started:
         notes_started[pitch].end()
         del notes_started[pitch]
+
+
+def midi_callback(midi_message):
+    code, pitch, volume = midi_message
+    # note on event in any channel
+    if volume > 0 and 144 <= code <= 159:
+        # fork a copy-cat note to start a 5th higher at 75% volume after 0.5 seconds
+        normalized_volume = (volume / 127)
+        s.fork(start_note, args=(pitch + 7, normalized_volume * 0.75), when=Moment.after_time(0.5))
+    # note off (or note on with velocity 0) event in any channel
+    elif (volume == 0 and 144 <= code <= 159 or 128 <= code <= 143):
+        # fork the copy-cat note a 5th higher to end after 0.5 seconds
+        s.fork(end_note, args=(pitch + 7, ), when=Moment.after_time(0.5))
 
 
 s.register_midi_listener(0, midi_callback)
@@ -1656,7 +1697,7 @@ s.wait_forever()
 
 
 ======================================================================
-=== FILE: Tutorial/26_keyboard_input.py
+=== FILE: scamp:Tutorial/26_keyboard_input.py
 ======================================================================
 
 """
@@ -1712,7 +1753,7 @@ s.wait_forever()
 
 
 ======================================================================
-=== FILE: Tutorial/27_mouse_input.py
+=== FILE: scamp:Tutorial/27_mouse_input.py
 ======================================================================
 
 """
@@ -1758,7 +1799,9 @@ def mouse_down(x, y, button):
     global note_started
     pitch = 50 + 49 * x
     note_started = {
-        "handle": (piano if button == "left" else flute).start_note(pitch, 1 - 0.8 * y),
+        # fixed=False so we can freely animate both pitch and volume (up or down); the explicit velocity=1 leaves
+        # expression headroom for volume to rise above its start value
+        "handle": (piano if button == "left" else flute).start_note(pitch, 1 - 0.8 * y, fixed=False, velocity=1),
         "start_pitch": pitch,
         "start_x": x
     }
@@ -1784,7 +1827,7 @@ s.wait_forever()
 
 
 ======================================================================
-=== FILE: Tutorial/28_osc_listening/osc_listener.py
+=== FILE: scamp:Tutorial/28_osc_listening/osc_listener.py
 ======================================================================
 
 """
@@ -1844,7 +1887,7 @@ s.wait_forever()
 
 
 ======================================================================
-=== FILE: Tutorial/28_osc_listening/osc_sender.py
+=== FILE: scamp:Tutorial/28_osc_listening/osc_sender.py
 ======================================================================
 
 """
@@ -1900,7 +1943,7 @@ for x in range(65, 85):
 
 
 ======================================================================
-=== FILE: Tutorial/29_spanners.py
+=== FILE: scamp:Tutorial/29_spanners.py
 ======================================================================
 
 """

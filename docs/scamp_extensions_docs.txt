@@ -3152,7 +3152,7 @@ class scamp_extensions.playback.multi_preset_instrument.MultiPresetInstrument(se
 
          * **clock** -- see "play_chord()"
 
-   start_note(pitch: float, volume: float, properties: str | dict | Sequence | NoteProperty = None, preset: str = None, clock: Clock = None, max_volume: float = 1) -> MultiNoteHandle
+   start_note(pitch: float, volume: float, properties: str | dict | Sequence | NoteProperty = None, preset: str = None, clock: Clock = None, fixed: bool | str = 'auto', velocity: float = None) -> MultiNoteHandle
 
       Start a note using this MultiPresetInstrument.
 
@@ -3167,12 +3167,14 @@ class scamp_extensions.playback.multi_preset_instrument.MultiPresetInstrument(se
 
          * **clock** -- see "start_note()"
 
-         * **max_volume** -- see "start_note()"
+         * **fixed** -- see "start_note()"
+
+         * **velocity** -- see "start_note()"
 
       Returns:
          a "MultiNoteHandle" with which to later manipulate the note
 
-   start_chord(pitches: Sequence[float], volume: float, properties: str | dict | Sequence | NoteProperty = None, preset: str = None, clock: Clock = None, max_volume: float = 1) -> MultiNoteHandle
+   start_chord(pitches: Sequence[float], volume: float, properties: str | dict | Sequence | NoteProperty = None, preset: str = None, clock: Clock = None, fixed: bool | str = 'auto', velocity: float = None) -> MultiNoteHandle
 
       Start a note using this MultiPresetInstrument.
 
@@ -3187,7 +3189,9 @@ class scamp_extensions.playback.multi_preset_instrument.MultiPresetInstrument(se
 
          * **clock** -- see "start_chord()"
 
-         * **max_volume** -- see "start_chord()"
+         * **fixed** -- see "start_chord()"
+
+         * **velocity** -- see "start_chord()"
 
       Returns:
          a "MultiNoteHandle" with which to later manipulate the chord
@@ -3417,7 +3421,7 @@ class scamp_extensions.playback.multi_staff_instrument.MultiStaffInstrument(name
 
          * **clock** -- see "play_chord()"
 
-   start_note(pitch: float, volume: float, properties: str | dict | Sequence | NoteProperty = None, force_staff: int = None, clock: Clock = None, max_volume: float = 1) -> MultiNoteHandle
+   start_note(pitch: float, volume: float, properties: str | dict | Sequence | NoteProperty = None, force_staff: int = None, clock: Clock = None, fixed: bool | str = 'auto', velocity: float = None) -> MultiNoteHandle
 
       Start a note using this MultiPresetInstrument.
 
@@ -3433,12 +3437,14 @@ class scamp_extensions.playback.multi_staff_instrument.MultiStaffInstrument(name
 
          * **clock** -- see "start_note()"
 
-         * **max_volume** -- see "start_note()"
+         * **fixed** -- see "start_note()"
+
+         * **velocity** -- see "start_note()"
 
       Returns:
          a "MultiNoteHandle" with which to later manipulate the note
 
-   start_chord(pitches: Sequence[float], volume: float, properties: str | dict | Sequence | NoteProperty = None, force_staff: int = None, clock: Clock = None, max_volume: float = 1) -> MultiNoteHandle
+   start_chord(pitches: Sequence[float], volume: float, properties: str | dict | Sequence | NoteProperty = None, force_staff: int = None, clock: Clock = None, fixed: bool | str = 'auto', velocity: float = None) -> MultiNoteHandle
 
       Start a note using this MultiPresetInstrument.
 
@@ -3454,7 +3460,9 @@ class scamp_extensions.playback.multi_staff_instrument.MultiStaffInstrument(name
 
          * **clock** -- see "start_chord()"
 
-         * **max_volume** -- see "start_chord()"
+         * **fixed** -- see "start_chord()"
+
+         * **velocity** -- see "start_chord()"
 
       Returns:
          a "MultiNoteHandle" with which to later manipulate the chord
@@ -3536,485 +3544,6 @@ single string instrument part.
 
 
 ======================================================================
-=== FILE: scamp_extensions.playback.supercollider/scamp_extensions.playback.supercollider.sc_lang.SCLangInstance.txt
-======================================================================
-
-scamp_extensions.playback.supercollider.sc_lang.SCLangInstance
-**************************************************************
-
-class scamp_extensions.playback.supercollider.sc_lang.SCLangInstance
-
-   Bases: "object"
-
-   Object that starts up an instance of sclang as a subprocess, and
-   facilitates communication with that subprocess via OSC. The SCAMP
-   supercollider extensions will be loaded into the sclang library
-   path.
-
-   -[ Methods ]-
-
-   +------------+--------------------------------------------------------------------------------------------+
-   | "new_synth | Sends the given SynthDef to SuperCollider to compile and add to the server.                |
-   | _def"(synt |                                                                                            |
-   | h_def_code |                                                                                            |
-   | )          |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "send_mess | Sends an OSC message to the running instance of sclang.                                    |
-   | age"(addre |                                                                                            |
-   | ss, value) |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "wait_for_ | Waits for a response from sclang to be sent to the given address, confirming that we are   |
-   | response"( | on the same page and telling us what address to send messages to.                          |
-   | address)   |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-
-   send_message(address, value) -> None
-
-      Sends an OSC message to the running instance of sclang.
-
-      Parameters:
-         * **address** -- the osc address string
-
-         * **value** -- the message value
-
-   wait_for_response(address) -> str
-
-      Waits for a response from sclang to be sent to the given
-      address, confirming that we are on the same page and telling us
-      what address to send messages to.
-
-      Parameters:
-         **address** -- the OSC message address at which to expect the
-         response.
-
-   new_synth_def(synth_def_code: str) -> None
-
-      Sends the given SynthDef to SuperCollider to compile and add to
-      the server.
-
-      Parameters:
-         **synth_def_code** -- the sclang code for the SynthDef (i.e.
-         "SynthDef(nameOFSynth, {[ugen graph function]}").
-
-
-======================================================================
-=== FILE: scamp_extensions.playback.supercollider/scamp_extensions.playback.supercollider.sc_lang.txt
-======================================================================
-
-scamp_extensions.playback.supercollider.sc_lang
-***********************************************
-
-Module containing functionality for starting up and communicating with
-an instance of sclang. (Note that this assumes that SuperCollider is
-installed and can be run from the command line.)
-
--[ Classes ]-
-
-+------------+--------------------------------------------------------------------------------------------+
-| "SCLangIns | Object that starts up an instance of sclang as a subprocess, and facilitates communication |
-| tance"()   | with that subprocess via OSC.                                                              |
-+------------+--------------------------------------------------------------------------------------------+
-
-* scamp_extensions.playback.supercollider.sc_lang.SCLangInstance
-
-  * "SCLangInstance"
-
-    * "SCLangInstance.send_message()"
-
-    * "SCLangInstance.wait_for_response()"
-
-    * "SCLangInstance.new_synth_def()"
-
-
-======================================================================
-=== FILE: scamp_extensions.playback.supercollider/scamp_extensions.playback.supercollider.sc_playback_implementation.SCPlaybackImplementation.txt
-======================================================================
-
-scamp_extensions.playback.supercollider.sc_playback_implementation.SCPlaybackImplementation
-*******************************************************************************************
-
-class scamp_extensions.playback.supercollider.sc_playback_implementation.SCPlaybackImplementation(synth_def: str)
-
-   Bases: "OSCPlaybackImplementation"
-
-   A subclass of "OSCPlaybackImplementation" designed to communicate
-   with a running copy of SCLang (via an "SCLangInstance").
-
-   Parameters:
-      * **host_instrument** -- the host instrument for this playback
-        implementation
-
-      * **synth_def** -- a string of SCLang code representing the
-        SynthDef to run. This should take at least the the arguments
-        "freq" (to which the pitch is sent), "volume" (to which the
-        not volume is sent), and "gate" (which is used to start and
-        stop the note).
-
-   -[ Inherited Methods ]-
-
-   +------------+--------------------------------------------------------------------------------------------+
-   | "change_no | Method that implements the change of a parameter other than pitch or volume                |
-   | te_paramet |                                                                                            |
-   | er"(note_i |                                                                                            |
-   | d, ...)    |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "change_no | Method that implements the change of a note's pitch                                        |
-   | te_pitch"( |                                                                                            |
-   | note_id,   |                                                                                            |
-   | new_pitch) |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "change_no | Method that implements the change of a note's volume                                       |
-   | te_volume" |                                                                                            |
-   | (note_id,  |                                                                                            |
-   | new_volume |                                                                                            |
-   | )          |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "duplicate | Returns a copy of this object by serializing to and from JSON.                             |
-   | "()        |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "end_note" | Method that implements the end of a note                                                   |
-   | (note_id)  |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "json_dump | Dump this object as a JSON string.                                                         |
-   | s"()       |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "json_load | Load this object from a JSON string.                                                       |
-   | s"(s)      |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "load_from | Load this object from a JSON file with the given path.                                     |
-   | _json"(fil |                                                                                            |
-   | e_path)    |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "save_to_j | Save this object to a JSON file using the given path.                                      |
-   | son"(file_ |                                                                                            |
-   | path)      |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "set_max_p | This method does nothing in the case of an OSC-based implementation                        |
-   | itch_bend" |                                                                                            |
-   | (semitones |                                                                                            |
-   | )          |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-   | "start_not | Method that implements the start of a note                                                 |
-   | e"(note_id |                                                                                            |
-   | , pitch,   |                                                                                            |
-   | volume,    |                                                                                            |
-   | ...)       |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-
-   -[ Attributes ]-
-
-   +------------+--------------------------------------------------------------------------------------------+
-   | "sclang_in |                                                                                            |
-   | stance"    |                                                                                            |
-   +------------+--------------------------------------------------------------------------------------------+
-
-   sclang_instance = None
-
-   change_note_parameter(note_id: int, parameter_name: str, new_value: float) -> None
-
-      Method that implements the change of a parameter other than
-      pitch or volume
-
-      Parameters:
-         * **note_id** -- unique identifier of the note to effect
-
-         * **parameter_name** -- name of the parameter to change
-
-         * **new_value** -- new floating-point value of that parameter
-
-   change_note_pitch(note_id: int, new_pitch: float) -> None
-
-      Method that implements the change of a note's pitch
-
-      Parameters:
-         * **note_id** -- unique identifier of the note whose pitch to
-           change
-
-         * **new_pitch** -- new (floating-point) MIDI pitch value
-
-   change_note_volume(note_id: int, new_volume: float) -> None
-
-      Method that implements the change of a note's volume
-
-      Parameters:
-         * **note_id** -- unique identifier of the note whose volume
-           to change
-
-         * **new_volume** -- new floating point volume value from 0 to
-           1
-
-   duplicate() -> T
-
-      Returns a copy of this object by serializing to and from JSON.
-
-   end_note(note_id: int) -> None
-
-      Method that implements the end of a note
-
-      Parameters:
-         **note_id** -- unique identifier of the note to end
-
-   json_dumps() -> str
-
-      Dump this object as a JSON string. This uses a custom encoder
-      that recognizes and appropriately converts any attributes that
-      are object inheriting from SavesToJSON.
-
-   classmethod json_loads(s: str) -> T
-
-      Load this object from a JSON string. This uses a custom decoder
-      that looks for a "_type" key in any object/dictionary being
-      parsed and converts it to the class specified (assuming it a
-      subclass of SavesToJSON).
-
-      Parameters:
-         **s** -- a string representing this object in JSON format
-
-   classmethod load_from_json(file_path: str) -> T
-
-      Load this object from a JSON file with the given path. This uses
-      a custom decoder that looks for a "_type" key in any
-      object/dictionary being parsed and converts it to the class
-      specified (assuming it a subclass of SavesToJSON).
-
-      Parameters:
-         **file_path** -- path for loading the file
-
-   save_to_json(file_path: str) -> None
-
-      Save this object to a JSON file using the given path. This uses
-      a custom encoder that recognizes and appropriately converts any
-      attributes that are object inheriting from SavesToJSON.
-
-      Parameters:
-         **file_path** -- path for saving the file
-
-   set_max_pitch_bend(semitones: int) -> None
-
-      This method does nothing in the case of an OSC-based
-      implementation
-
-   start_note(note_id: int, pitch: float, volume: float, properties: NoteProperties, note_info_dict: dict) -> None
-
-      Method that implements the start of a note
-
-      Parameters:
-         * **note_id** -- unique identifier for the note we are
-           starting
-
-         * **pitch** -- floating-point MIDI pitch value
-
-         * **volume** -- floating-point volume value (from 0 to 1)
-
-         * **properties** -- a NotePropertiesDictionary
-
-         * **other_parameter_values** -- dictionary mapping parameter
-           name to parameter value for parameters other than pitch and
-           volume. (This information was extracted from the properties
-           dictionary.)
-
-         * **note_info_dict** -- dictionary with auxiliary info about
-           this note (e.g. the clock it's running on, time stamp,
-           various flags)
-
-
-======================================================================
-=== FILE: scamp_extensions.playback.supercollider/scamp_extensions.playback.supercollider.sc_playback_implementation.add_sc_extensions.txt
-======================================================================
-
-scamp_extensions.playback.supercollider.sc_playback_implementation.add_sc_extensions
-************************************************************************************
-
-scamp_extensions.playback.supercollider.sc_playback_implementation.add_sc_extensions()
-
-   Adds several new functions to the "ScampInstrument" class, as well
-   as to the "Ensemble" (and therefore "Session").
-
-   New instance methods of *ScampInstrument*:
-
-   "add_supercollider_playback(self, synth_def: str)": takes a string
-   containing a SuperCollider SynthDef, and adds a
-   "SCPlaybackImplementation" to this instrument that uses that
-   SynthDef to synthesize sound. (This starts up instances of sclang
-   and scsynth in the background.)
-
-   "remove_supercollider_playback(self)": removes the (most recently
-   added) "SCPlaybackImplementation" from this instrument's
-   playback_implementations.
-
-   New instance methods of *Ensemble* / *Session*:
-
-   "new_supercollider_part(self, name: str, synth_def: str)":
-   Similarly to any of the other "new_part" methods, this adds and
-   returns a newly created ScampInstrument that uses an
-   "SCPlaybackImplementation" based on the given synth def string.
-
-   "get_sclang_instance(self)": Returns the instance of
-   "SCLangInstance" that this ensemble is using for supercollider
-   playback (or creates one if none is running).
-
-   "start_recording_sc_output(self, path, num_channels=2)": Tells
-   SuperCollider to start recording the playback to and audio file at
-   the given path, using the specified number of channels.
-
-   "stop_recording_sc_output(self)": Stops recording SuperCollider
-   playback to an audio file.
-
-
-======================================================================
-=== FILE: scamp_extensions.playback.supercollider/scamp_extensions.playback.supercollider.sc_playback_implementation.txt
-======================================================================
-
-scamp_extensions.playback.supercollider.sc_playback_implementation
-******************************************************************
-
-Module containing the "SCPlaybackImplementation" class (an extension
-of "OSCPlaybackImplementation"), which can be added to an instance of
-"ScampInstrument".
-
--[ Classes ]-
-
-+------------+--------------------------------------------------------------------------------------------+
-| "SCPlaybac | A subclass of "OSCPlaybackImplementation" designed to communicate with a running copy of   |
-| kImplement | SCLang (via an "SCLangInstance").                                                          |
-| ation"(syn |                                                                                            |
-| th_def)    |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-
-* scamp_extensions.playback.supercollider.sc_playback_implementation.S
-  CPlaybackImplementation
-
-  * "SCPlaybackImplementation"
-
-    * "SCPlaybackImplementation.sclang_instance"
-
-    * "SCPlaybackImplementation.change_note_parameter()"
-
-    * "SCPlaybackImplementation.change_note_pitch()"
-
-    * "SCPlaybackImplementation.change_note_volume()"
-
-    * "SCPlaybackImplementation.duplicate()"
-
-    * "SCPlaybackImplementation.end_note()"
-
-    * "SCPlaybackImplementation.json_dumps()"
-
-    * "SCPlaybackImplementation.json_loads()"
-
-    * "SCPlaybackImplementation.load_from_json()"
-
-    * "SCPlaybackImplementation.save_to_json()"
-
-    * "SCPlaybackImplementation.set_max_pitch_bend()"
-
-    * "SCPlaybackImplementation.start_note()"
-
--[ Functions ]-
-
-+------------+--------------------------------------------------------------------------------------------+
-| "add_sc_ex | Adds several new functions to the "ScampInstrument" class, as well as to the "Ensemble"    |
-| tensions"( | (and therefore "Session").                                                                 |
-| )          |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-
-* scamp_extensions.playback.supercollider.sc_playback_implementation.a
-  dd_sc_extensions
-
-  * "add_sc_extensions()"
-
-
-======================================================================
-=== FILE: scamp_extensions.playback.supercollider.txt
-======================================================================
-
-scamp_extensions.playback.supercollider package
-***********************************************
-
-Subpackage containing tools for interfacing with SuperCollider. These
-tools are enabled by calling "add_sc_extensions()", which adds several
-functions to SCAMP's "Ensemble" and "Session" classes. NB: All of this
-functionality assumes that you have SuperCollider installed in such a
-way that it can be run from the command line (via the command
-"sclang").
-
--[ Modules: ]-
-
-+------------+--------------------------------------------------------------------------------------------+
-| "sc_lang"  | Module containing functionality for starting up and communicating with an instance of      |
-|            | sclang.                                                                                    |
-+------------+--------------------------------------------------------------------------------------------+
-| "sc_playba | Module containing the "SCPlaybackImplementation" class (an extension of                    |
-| ck_impleme | "OSCPlaybackImplementation"), which can be added to an instance of "ScampInstrument".      |
-| ntation"   |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-
-* scamp_extensions.playback.supercollider.sc_lang
-
-  * scamp_extensions.playback.supercollider.sc_lang.SCLangInstance
-
-    * "SCLangInstance"
-
-      * "SCLangInstance.send_message()"
-
-      * "SCLangInstance.wait_for_response()"
-
-      * "SCLangInstance.new_synth_def()"
-
-* scamp_extensions.playback.supercollider.sc_playback_implementation
-
-  * scamp_extensions.playback.supercollider.sc_playback_implementation
-    .SCPlaybackImplementation
-
-    * "SCPlaybackImplementation"
-
-      * "SCPlaybackImplementation.sclang_instance"
-
-      * "SCPlaybackImplementation.change_note_parameter()"
-
-      * "SCPlaybackImplementation.change_note_pitch()"
-
-      * "SCPlaybackImplementation.change_note_volume()"
-
-      * "SCPlaybackImplementation.duplicate()"
-
-      * "SCPlaybackImplementation.end_note()"
-
-      * "SCPlaybackImplementation.json_dumps()"
-
-      * "SCPlaybackImplementation.json_loads()"
-
-      * "SCPlaybackImplementation.load_from_json()"
-
-      * "SCPlaybackImplementation.save_to_json()"
-
-      * "SCPlaybackImplementation.set_max_pitch_bend()"
-
-      * "SCPlaybackImplementation.start_note()"
-
-  * scamp_extensions.playback.supercollider.sc_playback_implementation
-    .add_sc_extensions
-
-    * "add_sc_extensions()"
-
--[ Public-Facing API (result of *import **): ]-
-
-+------------+--------------------------------------------------------------------------------------------+
-| "SCLangIns | Object that starts up an instance of sclang as a subprocess, and facilitates communication |
-| tance"()   | with that subprocess via OSC.                                                              |
-+------------+--------------------------------------------------------------------------------------------+
-| "SCPlaybac | A subclass of "OSCPlaybackImplementation" designed to communicate with a running copy of   |
-| kImplement | SCLang (via an "SCLangInstance").                                                          |
-| ation"(syn |                                                                                            |
-| th_def)    |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-| "add_sc_ex | Adds several new functions to the "ScampInstrument" class, as well as to the "Ensemble"    |
-| tensions"( | (and therefore "Session").                                                                 |
-| )          |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-
-
-======================================================================
 === FILE: scamp_extensions.playback.txt
 ======================================================================
 
@@ -4022,14 +3551,7 @@ scamp_extensions.playback package
 *********************************
 
 Subpackage containing playback-related extensions, such as support for
-multi-preset instruments, and direct integration with SuperCollider.
-
--[ Sub-packages: ]-
-
-+------------+--------------------------------------------------------------------------------------------+
-| "supercoll | Subpackage containing tools for interfacing with SuperCollider.                            |
-| ider"      |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
+multi-preset instruments.
 
 -[ Modules: ]-
 
@@ -4126,18 +3648,6 @@ multi-preset instruments, and direct integration with SuperCollider.
 | nt"(sessio |                                                                                            |
 | n, name[,  |                                                                                            |
 | ...])      |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-| "SCLangIns | Object that starts up an instance of sclang as a subprocess, and facilitates communication |
-| tance"()   | with that subprocess via OSC.                                                              |
-+------------+--------------------------------------------------------------------------------------------+
-| "SCPlaybac | A subclass of "OSCPlaybackImplementation" designed to communicate with a running copy of   |
-| kImplement | SCLang (via an "SCLangInstance").                                                          |
-| ation"(syn |                                                                                            |
-| th_def)    |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-| "add_sc_ex | Adds several new functions to the "ScampInstrument" class, as well as to the "Ensemble"    |
-| tensions"( | (and therefore "Session").                                                                 |
-| )          |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
 
 
@@ -5317,15 +4827,16 @@ concepts (e.g. scales, pitch-class sets), conveniences for interacting
 with various types of input and output, and in general anything that
 builds upon SCAMP but is outside of the scope of the main framework.
 
-The package is split into several subpackages according to the nature
-of the content: The pitch subpackage contains tools for manipulating
-pitches, such as scales and intervals; the rhythm subpackage contains
-tools for creating and interacting with rhythms and meters; the
-interaction subpackage contains utilities for human interface devices
-and other live interactions; the supercollider subpackage contains
-utilities for embedding supercollider code within SCAMP scripts; and
-the composers subpackage contains composer-specific tools and
-theoretical devices.
+The package is split into several subpackages: the pitch subpackage
+has tools for manipulating pitches, such as scales and intervals;
+rhythm has tools for representing meters and rhythmic structures;
+playback has extensions such as multi-preset instruments; engraving
+has extensions such as graphic notation; interaction has utilities for
+human interface devices and other live interactions; process has tools
+for modeling a compositional process, such as Markov chains and
+L-systems; composers showcases some composer-specific tools and
+theoretical devices; parsing has utilities for parsing data formats;
+and utilities has general helpers that fit nowhere else.
 
 -[ Sub-packages: ]-
 
@@ -5344,7 +4855,7 @@ theoretical devices.
 | "pitch"    | Subpackage containing pitch-related extensions.                                            |
 +------------+--------------------------------------------------------------------------------------------+
 | "playback" | Subpackage containing playback-related extensions, such as support for multi-preset        |
-|            | instruments, and direct integration with SuperCollider.                                    |
+|            | instruments.                                                                               |
 +------------+--------------------------------------------------------------------------------------------+
 | "process"  | Subpackage containing tools for modeling a compositional process, such as Markov chains    |
 |            | and L-Systems.                                                                             |
@@ -5666,43 +5177,43 @@ are imported from "scamp.utilities".
 | range_max[ |                                                                                            |
 | , mirror]) |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
-| "is_x_pow_ | Checks if x is an integer (including negative) power of y                                  |
-| of_y"(x,   |                                                                                            |
-| y)         |                                                                                            |
+| "ceil_to_m | Returns the multiple of factor that is closest above x.                                    |
+| ultiple"(x |                                                                                            |
+| , factor)  |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "prime_fac | Returns a list of the prime factors of n.                                                  |
+| tor"(n)    |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
 | "is_multip | Checks if x is a multiple of y.                                                            |
 | le"(x, y)  |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
-| "ceil_x_to | Returns the integer power of y that is closest above x.                                    |
-| _pow_of_y" |                                                                                            |
-| (x, y)     |                                                                                            |
+| "gcd"(*int | Greatest Common Divisor.                                                                   |
+| egers)     |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
-| "prime_fac | Returns a list of the prime factors of n.                                                  |
-| tor"(n)    |                                                                                            |
+| "is_prime" | Checks if a is a prime number.                                                             |
+| (a)        |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "is_x_pow_ | Checks if x is an integer (including negative) power of y                                  |
+| of_y"(x,   |                                                                                            |
+| y)         |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
 | "round_x_t | Returns the integer power of y that is closest to x (above or below).                      |
 | o_pow_of_y |                                                                                            |
 | "(x, y)    |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
-| "is_prime" | Checks if a is a prime number.                                                             |
-| (a)        |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-| "gcd"(*int | Greatest Common Divisor.                                                                   |
-| egers)     |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
 | "floor_x_t | Returns the integer power of y that is closest below x.                                    |
 | o_pow_of_y |                                                                                            |
 | "(x, y)    |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
-| "round_to_ | Returns the multiple of factor that is closest to x (above or below).                      |
+| "ceil_x_to | Returns the integer power of y that is closest above x.                                    |
+| _pow_of_y" |                                                                                            |
+| (x, y)     |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
+| "floor_to_ | Returns the multiple of factor that is closest below x.                                    |
 | multiple"( |                                                                                            |
 | x, factor) |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
-| "ceil_to_m | Returns the multiple of factor that is closest above x.                                    |
-| ultiple"(x |                                                                                            |
-| , factor)  |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-| "floor_to_ | Returns the multiple of factor that is closest below x.                                    |
+| "round_to_ | Returns the multiple of factor that is closest to x (above or below).                      |
 | multiple"( |                                                                                            |
 | x, factor) |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
@@ -5723,49 +5234,49 @@ are imported from "scamp.utilities".
 
   * "wrap_to_range()"
 
-* scamp_extensions.utilities.math.is_x_pow_of_y
+* scamp_extensions.utilities.math.ceil_to_multiple
 
-  * "is_x_pow_of_y()"
-
-* scamp_extensions.utilities.math.is_multiple
-
-  * "is_multiple()"
-
-* scamp_extensions.utilities.math.ceil_x_to_pow_of_y
-
-  * "ceil_x_to_pow_of_y()"
+  * "ceil_to_multiple()"
 
 * scamp_extensions.utilities.math.prime_factor
 
   * "prime_factor()"
 
-* scamp_extensions.utilities.math.round_x_to_pow_of_y
+* scamp_extensions.utilities.math.is_multiple
 
-  * "round_x_to_pow_of_y()"
-
-* scamp_extensions.utilities.math.is_prime
-
-  * "is_prime()"
+  * "is_multiple()"
 
 * scamp_extensions.utilities.math.gcd
 
   * "gcd()"
 
+* scamp_extensions.utilities.math.is_prime
+
+  * "is_prime()"
+
+* scamp_extensions.utilities.math.is_x_pow_of_y
+
+  * "is_x_pow_of_y()"
+
+* scamp_extensions.utilities.math.round_x_to_pow_of_y
+
+  * "round_x_to_pow_of_y()"
+
 * scamp_extensions.utilities.math.floor_x_to_pow_of_y
 
   * "floor_x_to_pow_of_y()"
 
-* scamp_extensions.utilities.math.round_to_multiple
+* scamp_extensions.utilities.math.ceil_x_to_pow_of_y
 
-  * "round_to_multiple()"
-
-* scamp_extensions.utilities.math.ceil_to_multiple
-
-  * "ceil_to_multiple()"
+  * "ceil_x_to_pow_of_y()"
 
 * scamp_extensions.utilities.math.floor_to_multiple
 
   * "floor_to_multiple()"
+
+* scamp_extensions.utilities.math.round_to_multiple
+
+  * "round_to_multiple()"
 
 
 ======================================================================
@@ -5972,13 +5483,13 @@ lists/sequences (some of which are imported from "scamp.utilities").
 | depth"(seq |                                                                                            |
 | )          |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
+| "sum_neste | Sums up all of the values within a nested list.                                            |
+| d_list"(l) |                                                                                            |
++------------+--------------------------------------------------------------------------------------------+
 | "make_flat | Flattens a list, including ones containing multiple levels of nesting.                     |
 | _list"(l[, |                                                                                            |
 | indivisibl |                                                                                            |
 | e])        |                                                                                            |
-+------------+--------------------------------------------------------------------------------------------+
-| "sum_neste | Sums up all of the values within a nested list.                                            |
-| d_list"(l) |                                                                                            |
 +------------+--------------------------------------------------------------------------------------------+
 
 * scamp_extensions.utilities.sequences.cyclic_slice
@@ -6001,13 +5512,13 @@ lists/sequences (some of which are imported from "scamp.utilities").
 
   * "sequence_depth()"
 
-* scamp_extensions.utilities.sequences.make_flat_list
-
-  * "make_flat_list()"
-
 * scamp_extensions.utilities.sequences.sum_nested_list
 
   * "sum_nested_list()"
+
+* scamp_extensions.utilities.sequences.make_flat_list
+
+  * "make_flat_list()"
 
 
 ======================================================================
@@ -6556,7 +6067,7 @@ class scamp_extensions.utilities.time_varying_parameter.TimeVaryingParameter(lev
 
       Parameters:
          **include_saddle_points** -- if True, also include points
-         where the curve starts to plateau
+         where the curve starts or stops plateauing
 
    max_absolute_slope()
 
@@ -6956,49 +6467,49 @@ the other extension categories.
 
     * "wrap_to_range()"
 
-  * scamp_extensions.utilities.math.is_x_pow_of_y
+  * scamp_extensions.utilities.math.ceil_to_multiple
 
-    * "is_x_pow_of_y()"
-
-  * scamp_extensions.utilities.math.is_multiple
-
-    * "is_multiple()"
-
-  * scamp_extensions.utilities.math.ceil_x_to_pow_of_y
-
-    * "ceil_x_to_pow_of_y()"
+    * "ceil_to_multiple()"
 
   * scamp_extensions.utilities.math.prime_factor
 
     * "prime_factor()"
 
-  * scamp_extensions.utilities.math.round_x_to_pow_of_y
+  * scamp_extensions.utilities.math.is_multiple
 
-    * "round_x_to_pow_of_y()"
-
-  * scamp_extensions.utilities.math.is_prime
-
-    * "is_prime()"
+    * "is_multiple()"
 
   * scamp_extensions.utilities.math.gcd
 
     * "gcd()"
 
+  * scamp_extensions.utilities.math.is_prime
+
+    * "is_prime()"
+
+  * scamp_extensions.utilities.math.is_x_pow_of_y
+
+    * "is_x_pow_of_y()"
+
+  * scamp_extensions.utilities.math.round_x_to_pow_of_y
+
+    * "round_x_to_pow_of_y()"
+
   * scamp_extensions.utilities.math.floor_x_to_pow_of_y
 
     * "floor_x_to_pow_of_y()"
 
-  * scamp_extensions.utilities.math.round_to_multiple
+  * scamp_extensions.utilities.math.ceil_x_to_pow_of_y
 
-    * "round_to_multiple()"
-
-  * scamp_extensions.utilities.math.ceil_to_multiple
-
-    * "ceil_to_multiple()"
+    * "ceil_x_to_pow_of_y()"
 
   * scamp_extensions.utilities.math.floor_to_multiple
 
     * "floor_to_multiple()"
+
+  * scamp_extensions.utilities.math.round_to_multiple
+
+    * "round_to_multiple()"
 
 * scamp_extensions.utilities.sequences
 
@@ -7022,13 +6533,13 @@ the other extension categories.
 
     * "sequence_depth()"
 
-  * scamp_extensions.utilities.sequences.make_flat_list
-
-    * "make_flat_list()"
-
   * scamp_extensions.utilities.sequences.sum_nested_list
 
     * "sum_nested_list()"
+
+  * scamp_extensions.utilities.sequences.make_flat_list
+
+    * "make_flat_list()"
 
 * scamp_extensions.utilities.time_varying_parameter
 
