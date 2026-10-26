@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>resources.txt</title>
+<style>pre { white-space: pre-wrap; }</style>
+</head>
+<body>
+<pre>====================================================================
+SCAMP AI RESOURCES
+====================================================================
+
+NOTE: If you were sent here by <a href="https://marcthespark.github.io/scamp-tutor/tutor.html">tutor.html</a>, you are acting as a SCAMP tutor;
+keep following its instructions. If this file was your entry point, ignore
+<a href="https://marcthespark.github.io/scamp-tutor/tutor.html">tutor.html</a>: just use the material below to help with SCAMP however the user
+asks.
+
+This file lists the documentation and example resources for SCAMP (Suite
+for Computer-Assisted Music in Python), which you can fetch on demand.
+Base URL for everything below:
+
+    <a href="https://marcthespark.github.io/scamp-tutor/">https://marcthespark.github.io/scamp-tutor/</a>
+
+What SCAMP is: SCAMP is a computer-assisted composition framework in
+Python designed to act as a hub, flexibly connecting the
+composer-programmer to a variety of resources for playback and notation.
+SCAMP provides functionality to manage the flow of musical time, play back
+notes via SoundFonts or MIDI or OSC messages to an external synthesizer,
+and quantizes and exports the result to music notation in the form of
+MusicXML or LilyPond.
+
+REQUIRED READING: before you write or explain any SCAMP code, fetch
+<a href="https://marcthespark.github.io/scamp-tutor/stumblingBlocks.html">stumblingBlocks.html</a> (from the base URL above). It is a short list of
+non-obvious API facts that AI assistants reliably get wrong — blocking
+defaults, instrument-preset naming, list-pitch-means-glissando, and
+API changes since older tutorials. Unlike the reference bundles at the
+bottom, this one is not fetch-on-demand: read it up front.
+
+--------------------------------------------------------------------
+SCAMP ESSENTIALS (state these; don't assume)
+--------------------------------------------------------------------
+Core first piece:
+    from scamp import *
+    s = Session()
+    violin = s.new_part("Violin")
+    violin.play_note(60, 1, 0.5)   # pitch, volume, length
+    wait(1)
+
+  - Pitch is a MIDI number (60 = middle C).
+  - Volume is 0 to 1.
+  - The third play_note argument is length in beats. Its keyword is
+    `length` (not `duration`), though "duration" is fine in plain speech.
+  - wait(beats) advances musical time.
+
+====================================================================
+RESOURCES  (fetch on demand from the base URL above)
+====================================================================
+These are large reference files. Do NOT fetch them all up front — fetch a
+file when a question actually calls for it. Every bundle concatenates many
+original files, each introduced by a header line:
+
+    === FILE: &lt;package&gt;:&lt;path&gt;   (docs bundles: just &lt;path&gt;)
+
+so you can always tell the user exactly which real file a snippet is
+from.
+
+DOCUMENTATION — authoritative API reference + concept prose. SCAMP is built
+on three sibling libraries, so a class may be documented in a different
+file than expected (time -&gt; clockblocks, curves -&gt; expenvelope,
+notes/playback/score -&gt; scamp).
+
+  <a href="https://marcthespark.github.io/scamp-tutor/docs/scamp_docs.html">docs/scamp_docs.html</a>
+      Main framework: Session, Ensemble, ScampInstrument, play_note,
+      Performance, Score, quantization, playback (soundfont/MIDI/OSC),
+      settings. ALSO includes the narrative tutorials and setup/install
+      prose — the most beginner-friendly, teaching-oriented material.
+      Start here for most questions.
+  <a href="https://marcthespark.github.io/scamp-tutor/docs/clockblocks_docs.html">docs/clockblocks_docs.html</a>
+      Musical time: Clock, TempoEnvelope, TempoHistory, wait, fork.
+      Anything about time, tempo, waiting, or coordinated tempo layers.
+  <a href="https://marcthespark.github.io/scamp-tutor/docs/expenvelope_docs.html">docs/expenvelope_docs.html</a>
+      Envelope and EnvelopeSegment — the curves used for glissandi,
+      dynamic swells, and any continuous parameter given to play_note.
+  <a href="https://marcthespark.github.io/scamp-tutor/docs/pymusicxml_docs.html">docs/pymusicxml_docs.html</a>
+      MusicXML export internals; for notation export detail.
+  <a href="https://marcthespark.github.io/scamp-tutor/docs/scamp_extensions_docs.html">docs/scamp_extensions_docs.html</a>
+      Optional add-ons: scales, pitch-class sets, rhythm/process tools,
+      extra I/O. Only if the user uses scamp_extensions.
+
+EXAMPLES — real, runnable SCAMP code. Prefer showing/adapting an example
+over inventing code.
+
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/examples_index.html">examples/examples_index.html</a>   &lt;-- FETCH THIS FIRST to find an example.
+      A retrieval map organized by topic: each example's one-line summary and
+      API surface, grouped by the same topics as the bundles below. Scan it,
+      then fetch the matching topic bundle and pull the relevant "=== FILE:"
+      block.
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/tutorial.html">examples/tutorial.html</a>
+      Curated, progressively numbered teaching set. PREFER THIS for clean,
+      minimal, beginner-facing usage.
+  The remaining bundles group every example (tutorial and beyond) by topic;
+  fetch whichever matches the question:
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/time_clocks.html">examples/time_clocks.html</a>              forking, tempo, clocks
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/pitch.html">examples/pitch.html</a>                    glissando, scales, microtonality, spelling
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/envelopes.html">examples/envelopes.html</a>                glissandi, dynamic swells, Envelope shapes
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/notation_engraving.html">examples/notation_engraving.html</a>       notation output, quantization, engraving
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/playback.html">examples/playback.html</a>                 soundfont/MIDI/OSC, note handles, adjustments
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/interactivity_visualization.html">examples/interactivity_visualization.html</a>   keyboard/mouse/MIDI input, GUI
+  <a href="https://marcthespark.github.io/scamp-tutor/examples/composition_form.html">examples/composition_form.html</a>         algorithmic pieces and larger-scale form
+
+TYPICAL LOOKUP FLOW
+  "How do I ...":  <a href="https://marcthespark.github.io/scamp-tutor/examples/examples_index.html">examples/examples_index.html</a> -&gt; show/adapt a Tutorial
+      example -&gt; confirm exact behavior in the relevant docs file.
+  "Why does ... behave this way" / exact parameters:  go straight to the
+      docs file for whichever package owns that class.
+</pre>
+</body>
+</html>

@@ -9,3 +9,5 @@ Instructions and fetchable text bundles that turn any AI assistant into a tutor 
 - `docs/`, `examples/`: generated bundles. Regenerate with `regenerate_doc_bundles.sh` and
   `regenerate_bundles.sh`, which must run from inside the
   [scamp-meta](https://github.com/MarcTheSpark/scamp-meta) workspace, where this repo is a submodule.
+- `*.html`: generated twins of every text file, with real links, for chatbots that won't follow
+  plain-text URLs. The prompts point at these. After hand-editing a text file, rerun `build_html.py`.

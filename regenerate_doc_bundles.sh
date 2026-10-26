@@ -50,3 +50,5 @@ for pkg in order:
             fo.write(f.read_text())
     print(f'{pkg}_docs.txt <- {len(buckets[pkg])} pages ({dest.stat().st_size // 1024} KB)')
 PY
+
+python3 "$here/build_html.py"

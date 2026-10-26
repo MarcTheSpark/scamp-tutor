@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>examples/time_clocks.txt</title>
+<style>pre { white-space: pre-wrap; }</style>
+</head>
+<body>
+<pre>
+
+======================================================================
+=== FILE: scamp:Tutorial/10_multi_part.py
+======================================================================
+
+"""
+SCAMP Example: Multi-Part Music
+
+Plays two coordinated but independent parallel parts, one for oboe and one for bassoon.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import random
+
+# one way of setting an initial tempo
+s = Session(tempo=100)
+
+oboe = s.new_part("oboe")
+bassoon = s.new_part("bassoon")
+
+
+# define a function for the oboe part
+def oboe_part():
+    # play random notes until we have
+    # passed beat 7 in the session
+    while s.beat &lt; 7:
+        pitch = int(random.uniform(67, 79))
+        volume = random.uniform(0.5, 1)
+        length = random.uniform(0.25, 1)
+        oboe.play_note(pitch, volume, length)
+    # end with a note of exactly the right
+    # length to take us to the end of beat 8
+    oboe.play_note(80, 1.0, 8 - s.beat)
+
+
+# define a function for the bassoon part
+def bassoon_part():
+    # simply play quarter notes on random
+    # pitches for 8 beats
+    while s.beat &lt; 8:
+        bassoon.play_note(
+            random.randint(52, 59), 1, 1
+        )
+
+
+s.start_transcribing()
+# start the oboe and bassoon parts as two parallel child processes
+s.fork(oboe_part)
+s.fork(bassoon_part)
+# have the session wait for the child processes to finish (return)
+s.wait_for_children_to_finish()
+performance = s.stop_transcribing()
+performance.to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/03_blocking_false.py
+======================================================================
+
+"""
+SCAMP Example: Blocking False
+
+By default `play_note` blocks execution until the note is done playing. This is very useful for playing a melody,
+since you simply call `play_note` in sequence for every note of the melody. However, one simple way of allowing notes
+to overlap — if desired — is to pass the keyword argument `blocking=False`. This is essentially a single-note fork:
+playback continues on to the next line without waiting for the note to finish.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+# import the scamp namespace
+from scamp import *
+# construct a session object
+s = Session()
+# add a new violin part to the session
+violin = s.new_part("Violin")
+
+# start playing a 2-beat C, but return immediately
+violin.play_note(60, 1, 2, blocking=False)
+# wait for only one beat
+wait(1)
+# start playing a 2-beat E, blocking this time
+violin.play_note(64, 1, 2)
+
+for pitch in [67, 72, 60, 64, 67, 72]:
+    # play notes that are a whole beat long...
+    violin.play_note(pitch, 1, 1, blocking=False)
+    # ...waiting only half a beat in between
+    wait(0.5)
+
+# a note is still playing when we reach the end of the script.
+# Without this line, it gets cut off prematurely; this keeps the script alive until it finished
+wait_for_children_to_finish()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/04_play_chord.py
+======================================================================
+
+"""
+SCAMP Example: Play Chord
+
+Demonstrates `ScampInstrument.play_chord` by playing a famous progression, and then playing it a few more times
+randomly up and down the keyboard.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import random
+
+# fixed random seed for reproducibility
+random.seed(42)
+
+s = Session()
+s.tempo = 72
+
+piano = s.new_part("piano")
+
+# a famous chord progression
+piano.play_chord([53, 59, 63, 68], 0.8, 2)
+piano.play_chord([52, 56, 62, 71], 0.6, 1)
+
+
+# and then the same progression bouncing up and down the piano
+# oh, and let's accelerate, why not
+set_tempo_target(144, Moment.after_beats(6))
+for _ in range(8):
+    t = random.randint(-24, 24)
+    piano.play_chord([53 + t, 59 + t, 63 + t, 68 + t], 0.8, 0.5)
+    piano.play_chord([52 + t, 56 + t, 62 + t, 71 + t], 0.6, 0.5, "staccato")
+
+
+======================================================================
+=== FILE: scamp:Time &amp; clocks/Forking &amp; simultaneity/chords_example.py
+======================================================================
+
+"""
+SCAMP Example: Chords and Noteheads
+
+Chords with per-note noteheads, and a start_chord handle whose pitches change over time. Under the hood,
+`play_chord` plays all but one of its notes with `blocking=False` and the last one blocking, so the notes
+sound together.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+piano = s.new_part("piano")
+
+s.start_transcribing()
+
+# this makes the whole chord diamond noteheads
+handle = piano.start_chord(([60, 56], 64, 69), 0.5, "notehead: diamond")
+
+handle.change_pitch((62, 58, 60), (1/3, 1/3, 1/3), transition_curve_shape_or_shapes=(5, 5, 5))
+
+engraving_settings.glissandi.control_point_policy = "split"
+
+wait(2)
+handle.end()
+
+# this gives separate noteheads for separate pitches
+piano.play_chord((60, 64, 69), 0.5, 2.0, "noteheads: diamond / normal / cross")
+
+# noteheads are assigned in the order of the pitch tuple given, not in order from low to high
+# so here, middle C has a normal notehead, E has a diamond, and A has a cross
+piano.play_chord((64, 60, 69), 0.5, 2.0, "noteheads: diamond / normal / cross")
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Pitch/Pitch spelling/voice_leading.py
+======================================================================
+
+"""
+SCAMP Example: Voice Leading / spelling policy
+
+Rule-based four-part voice leading over a scale, spelled in E major via the `default_spelling_policy` argument.
+"""
+
+from scamp import *
+from scamp_extensions.pitch import Scale
+
+s = Session()
+
+piano_treb = s.new_part("piano", clef_preference="treble", default_spelling_policy="E major")
+piano_bass = s.new_part("piano", clef_preference="bass", default_spelling_policy="E major")
+
+scl = Scale.major(64)
+
+bass_line = [-7, -6, -5, -9, -10, -12, -13, -10, -14]
+
+upper_parts = [-3, 0, 2]
+
+last_bass_degree = None
+
+def check_chord_tone(interval_with_bass):
+    return interval_with_bass % 7 in (0, 2, 4)
+
+def move_upper_parts(old_bass_note, new_bass_note):
+    bass_motion = new_bass_note - old_bass_note
+    bass_motion_mod = bass_motion % 7
+
+    if bass_motion_mod == 0:
+        return
+    elif bass_motion_mod in [1, 6]:
+        # stepwise motion
+        # move to nearest consonance in opposite motion to bass
+        direction_to_move = -1 if bass_motion &gt; 0 else 1
+    elif bass_motion_mod in [2, 4]:
+        direction_to_move = -1
+    else:
+        direction_to_move = 1
+        
+    for i, p in enumerate(upper_parts):
+        while not check_chord_tone(p - new_bass_note):
+            p += direction_to_move
+        upper_parts[i] = p
+
+s.start_transcribing()
+for bass_degree in bass_line:
+    if last_bass_degree is not None:
+        move_upper_parts(last_bass_degree, bass_degree)
+    last_bass_degree = bass_degree
+    piano_bass.play_note(scl.degree_to_pitch(bass_degree), 1, 1, blocking=False)
+    piano_treb.play_chord(scl.degree_to_pitch(upper_parts), 1, 1)
+
+scl.transpose(4)
+
+for bass_degree in bass_line:
+    if last_bass_degree is not None:
+        move_upper_parts(last_bass_degree, bass_degree)
+    last_bass_degree = bass_degree
+    piano_bass.play_note(scl.degree_to_pitch(bass_degree), 1, 1, "spelling: Ab major", blocking=False)
+    piano_treb.play_chord(scl.degree_to_pitch(upper_parts), 1, 1, "spelling: Ab major")
+
+s.stop_transcribing().to_score().show()
+
+======================================================================
+=== FILE: scamp:Time &amp; clocks/Forking &amp; simultaneity/guitar_arpeggios.py
+======================================================================
+
+"""
+SCAMP Example: Guitar Arpeggios
+
+Fingerpicking-style guitar arpeggios built from overlapping held notes.
+"""
+
+from scamp import *
+
+s = Session()
+
+guitar = s.new_part("guitar")
+
+
+def play_held_arpeggio(inst, pitches, volumes, note_length, total_length):
+    t = 0
+    for p, v in zip(pitches, volumes):
+        inst.play_note(p, v, total_length - t, blocking=False)
+        wait(note_length)
+        t += note_length
+    wait(total_length - t)
+    
+
+while True:
+    play_held_arpeggio(guitar, [45, 52, 59, 57, 60], [0.9, 0.6, 0.8, 0.5, 0.8], 0.25, 3.0)
+    play_held_arpeggio(guitar, [43, 52, 59], [0.9, 0.6, 0.8], 0.25, 2.0)
+    play_held_arpeggio(guitar, [41, 50, 59, 57, 60], [0.9, 0.6, 0.8, 0.5, 0.8], 0.25, 3.0)
+    play_held_arpeggio(guitar, [40, 47, 56, 62], [0.9, 0.6, 0.6, 0.8], 1/3, 2.0)
+
+
+======================================================================
+=== FILE: scamp:Time &amp; clocks/Forking &amp; simultaneity/octave_lines.py
+======================================================================
+
+"""
+SCAMP Example: Octave Lines
+
+A short passage of random notes for violin and piano, which uses the optional note properties argument to `play_note`
+to apply ottava when notes are very high or very low. The two parts run as parallel forked processes, an example of
+multi-part playback using `fork`.
+"""
+
+from scamp import *
+import random
+
+# makes output deterministic; comment out for variation
+random.seed(42)
+
+s = Session()
+
+s.tempo = 70
+
+violin = s.new_part("violin")
+piano = s.new_part("piano")
+
+s.start_transcribing()
+
+def violin_part():
+    while s.beat &lt; 16:
+        pitch = random.randint(80, 105)
+        ottava_mark = "15va" if pitch &gt; 98 else "8va" if pitch &gt; 90 else None
+        violin.play_note(pitch, 0.5, 0.25, ottava_mark)
+
+
+def piano_part():
+    while s.beat &lt; 16:
+        pitch = random.randint(25, 45)
+        ottava_mark = "8vb" if pitch &lt; 32 else None
+        piano.play_note(pitch, 0.5, 0.5, ["staccato", ottava_mark])
+        wait(random.choice([0, 0.5, 1.0]))
+
+
+fork(violin_part)
+fork(piano_part)
+wait_for_children_to_finish()
+
+perf = s.stop_transcribing()
+perf.to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/02_tempo_change.py
+======================================================================
+
+"""
+SCAMP Example: Tempo Change
+
+Same as Hello World example, but repeatedly, with changing tempi.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+# Start with an initial tempo of 100
+s.tempo = 100
+
+# add a new violin part to the session
+violin = s.new_part("Violin")
+
+
+for pitch in [60, 64, 67, 72]:
+    violin.play_note(pitch, 1, 0.5)
+
+# you can change tempo at any time; not just at the beginning
+s.tempo = 40
+for pitch in [60, 64, 67, 72]:
+    violin.play_note(pitch, 1, 0.5)
+
+# you can also do an accelerando/decelerando, specifying
+# a moment at which to reach the goal tempo
+set_tempo_target(150, Moment.after_beats(6))
+for pitch in [60, 64, 67, 72] * 4:
+    violin.play_note(pitch, 1, 0.5)
+
+======================================================================
+=== FILE: scamp:Composition &amp; form/Larger-scale form/reich_piano_phase.py
+======================================================================
+
+"""
+SCAMP Example: Piano Phase
+
+Steve Reich's Piano Phase: the same figure forked at 100 vs. 98 BPM, transcribed on one clock.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+session = Session()
+
+piano1 = session.new_part("Piano")
+piano2 = session.new_part("Piano")
+
+pitches = [64, 66, 71, 73, 74, 66, 64, 73, 71, 66, 74, 73]
+
+
+def piano_part(which_piano):
+    while True:
+        for pitch in pitches:
+            which_piano.play_note(pitch, 1.0, 0.25)
+
+
+clock1 = session.fork(piano_part, args=(piano1,), initial_tempo=100)
+clock2 = session.fork(piano_part, args=(piano2,), initial_tempo=98)
+
+session.start_transcribing(clock=clock1)
+session.wait(30)
+
+performance = session.stop_transcribing()
+performance.to_score(QuantizationScheme.from_time_signature("3/4", 16)).show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Larger-scale form/evolving_form/Crackler.scd
+======================================================================
+
+MarcUtilities.setOutputLimiter(0.5, globalMul: 0.3)
+
+(
+ScampUtils.instrumentFromSynthDef(
+	SynthDef(\superInst, { |freq=440, volume=0, gate=1, crackliness=0, spread=0, pan=0|
+		var synth = Mix.fill(5, { |k|
+			Pan2.ar(
+				SinOsc.ar(
+					freq * spread.linlin(0, 1, 1.0, 0.8).pow(k-2) * LFNoise1.ar(crackliness.linlin(0, 1, 30, 100), crackliness.linlin(0, 1, 0, 0.2), 1),
+					crackliness.linexp(0, 1, 1, 300)
+				) * EnvGen.kr(Env.perc(
+					attackTime: crackliness.linexp(0, 1, 0.02, 0.01),
+					releaseTime:crackliness.linlin(0, 1, 0.2, 0.01)),
+				gate: Impulse.kr(40)),
+				k.linlin(0, 5, -1, 1)
+			)
+		});
+		var panned_out = volume * synth * EnvGen.ar(Env.adsr, gate: gate, doneAction: 2) * Pan2.ar(DC.ar(1), pan);
+		Out.ar(0, panned_out);
+	});
+)
+)
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Larger-scale form/evolving_form/definitions.py
+======================================================================
+
+"""
+SCAMP Example: Evolving Form Definitions
+
+Shared dynamics envelopes and bar-line helpers for evolving_form.py.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+# playback_settings.adjustments.set("staccato", "length * 0.3")
+
+forte_piano = Envelope(
+    [0.8, 0.4, 1.0], [0.2, 0.8], curve_shapes=[0, 3]
+)
+
+diminuendo = Envelope.from_levels([0.8, 0.3])
+
+
+def wrap_in_range(value, low, high):
+    return (value - low) % (high - low) + low
+
+
+bar_lines = []
+
+
+def do_bar_line(beat):
+    beats_since_last_bar_line = beat - bar_lines[-1] if len(bar_lines) &gt; 0 else beat
+    if beats_since_last_bar_line % 1 == 0 and beats_since_last_bar_line &lt; 5:
+        bar_lengths = [beats_since_last_bar_line]
+    else:
+        num_bars_to_add = 2
+        while beats_since_last_bar_line / num_bars_to_add &gt; 4:
+            num_bars_to_add += 1
+        last_bar_length = round(beats_since_last_bar_line / num_bars_to_add)
+        remaining_bars_length = beats_since_last_bar_line - last_bar_length
+        if remaining_bars_length &lt;= 5:
+            bar_lengths = [remaining_bars_length, last_bar_length]
+        else:
+            first_bar_length = remaining_bars_length % 3 + 3 if remaining_bars_length % 3 &lt; 2 else remaining_bars_length % 3
+            bar_lengths = [first_bar_length] + [3] * int((remaining_bars_length - first_bar_length) / 3) + [last_bar_length]
+    for bar_length in bar_lengths:
+        bar_lines.append(bar_lines[-1] + bar_length if len(bar_lines) &gt; 0 else bar_length)
+
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Larger-scale form/evolving_form/evolving_form.py
+======================================================================
+
+"""
+SCAMP Example: Evolving Form
+
+The main script for the piece, drawing upon definitions.py and formal_parameters.py.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.pitch import Scale
+from definitions import *
+from formal_parameters import *
+from random import random, choice, uniform, seed
+
+seed(0)
+s = Session()
+
+cello = s.new_part("cello")
+pianoteq = s.new_midi_part("pianoteq", midi_output_device="IAC")
+supercollider_instrument = s.new_osc_part("superInst", 57120, "127.0.0.1")
+
+s.set_tempo_targets([150, 60],
+                    [Moment.after_time(TOTAL_LENGTH * 0.618), Moment.after_time(TOTAL_LENGTH)])
+
+s.start_transcribing()
+
+interval = 1
+cello_pitch = 48
+
+
+def pianoteq_upbeat():
+    start_pitch = 72 + cello_pitch % 12
+    end_pitch = 72 + (cello_pitch + interval) % 12
+    if end_pitch &lt; start_pitch:
+        end_pitch += 12
+    for i, p in enumerate([start_pitch + uniform(-k, k) for k in range(7)]):
+        pianoteq.play_note(p, 0.3 + 0.1 * i, 0.5/7)
+    
+    set_rate_target(pianoteq_gesture_rit_factor.value_at(s.time), Moment.after_beats(15))
+    p = end_pitch
+    volume = 1.0
+    pianoteq.play_note(p, volume, 0.375)
+    for _ in range(int(pianoteq_gesture_length.value_at(s.time))):
+        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
+        degree = round(scale.pitch_to_degree(p))
+        pianoteq.play_note(scale.degree_to_pitch(degree - 4), volume, 0.125)
+        pianoteq.play_note(scale.degree_to_pitch(degree - 3), volume, 0.375)
+        volume *= 0.8
+        p = scale.degree_to_pitch(degree - 3)
+        
+
+def pianoteq_filler():
+    p = 60
+    while random() &lt; pianoteq_filler_probability.value_at(s.time):
+        scale = Scale.from_pitches([cello_pitch + x for x in (0, 2, 3, 5, 6, 8, 9, 11, 12)])
+        degree = round(scale.pitch_to_degree(p))
+        if p == 60:
+            wait(1/5)
+        for i in range(4):
+            pianoteq.play_chord([scale.degree_to_pitch(degree + 2*i),
+                                 scale.degree_to_pitch(degree + 2*i + 3)],
+                                0.6 + 0.1*i, 1/5, "staccatissimo")
+        if p != 60 and random() &lt; pianoteq_filler_probability.value_at(s.time):
+            pianoteq.play_chord([scale.degree_to_pitch(degree + 4),
+                                 scale.degree_to_pitch(degree + 9),
+                                 scale.degree_to_pitch(degree + 11)],
+                                1.0, 1/5, "staccatissimo")
+        else:
+            wait(1/5)
+        p = wrap_in_range(p + 6, 62, 92)
+
+
+def sc_gesture():
+    start_pan = uniform(-1, 1)
+    end_pan = uniform(0, 1) if start_pan &lt; 0 else uniform(-1, 0)
+    register_ref = sc_register.value_at(s.time)
+    supercollider_instrument.play_note(
+        register_ref + cello_pitch % 12,
+        [0, 0.5], sc_gesture_length.value_at(s.time),
+        {"param_crackliness": [0, crackliness.value_at(s.time)],
+         "param_pan": start_pan}
+    )
+    supercollider_instrument.play_note(
+        [register_ref + cello_pitch % 12, register_ref + cello_pitch % 12 + 12],
+        [[0.5, 0], [1], [-4]], sc_gesture_length.value_at(s.time) * 3/2,
+        {"param_crackliness": [crackliness.value_at(s.time), 0],
+         "param_spread": [[0, 0, 0.5], [0.5, 0.5]],
+         "param_pan": end_pan}
+    )
+
+
+piano_tech_clock = None
+sc_gesture_clock = None
+
+while True:
+    if random() &lt; cello_continue_probability.value_at(s.time):
+        if len(bar_lines) &gt; 0 and s.beat - bar_lines[-1] &gt; 3 and \
+                (piano_tech_clock is None or not piano_tech_clock.alive):
+            piano_tech_clock = s.fork(pianoteq_filler)
+            do_bar_line(s.beat)
+            
+        cello.play_note(cello_pitch, forte_piano, choice([1.0, 1.5]))
+    else:
+        # end condition; break and go to final note
+        if cello_pitch % 12 == 0 and s.time &gt;= TOTAL_LENGTH:
+            break
+        if s.time &gt; 20 and (sc_gesture_clock is None or not sc_gesture_clock.alive):
+            sc_gesture_clock = s.fork(sc_gesture)
+        cello.play_note(cello_pitch, diminuendo, choice([2.0, 2.5, 3.0]))
+        if piano_tech_clock is not None:
+            piano_tech_clock.kill()
+        wait(choice([0.5, 1.0]))
+        if s.time &gt; 40:
+            piano_tech_clock = s.fork(pianoteq_upbeat)
+        
+        if random() &lt; cello_staccato_probability.value_at(s.time):
+            cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
+            interval += 1
+            wait(0.25)
+            cello.play_note(cello_pitch, 0.9, 0.25, "staccato")
+        else:
+            wait(0.5)
+        do_bar_line(s.beat)
+        
+    cello_pitch = wrap_in_range(cello_pitch + interval, 36, 60)
+    interval += 1
+    
+cello.play_note(36, diminuendo, [4.0])
+do_bar_line(s.beat)
+s.stop_transcribing().to_score(bar_line_locations=bar_lines, max_divisor=14).show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Larger-scale form/evolving_form/formal_parameters.py
+======================================================================
+
+"""
+SCAMP Example: Formal Parameters
+
+Formal-parameter envelopes for evolving_form.py; run directly to plot them.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+TOTAL_LENGTH = 180
+
+# golden ratio durations
+gr, one_minus_gr = TOTAL_LENGTH * 0.618, TOTAL_LENGTH * (1 - 0.618)
+
+cello_continue_probability = Envelope([0.4, 1.0, 0], [gr, one_minus_gr])
+cello_staccato_probability = Envelope.from_levels([0, 1], length=TOTAL_LENGTH)
+pianoteq_gesture_length = Envelope.from_levels([0, 0, 10, 0], length=TOTAL_LENGTH)
+pianoteq_gesture_rit_factor = Envelope([0.25, 0.8, 0.1], [gr, one_minus_gr])
+pianoteq_filler_probability = Envelope([0.3, 0.97, 0.3], [gr, one_minus_gr])
+crackliness = Envelope([0.6, 1.0, 0], [gr, one_minus_gr])
+sc_gesture_length = Envelope([5, 2, 5], [gr, one_minus_gr])
+sc_register = Envelope([72, 72, 60, 60, 48, 48, 36, 36 ],
+                       [TOTAL_LENGTH * 0.7, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1, 0, TOTAL_LENGTH * 0.1])
+
+
+if __name__ == "__main__":
+    cello_continue_probability.show_plot("Cello continue probability")
+    cello_staccato_probability.show_plot("Cello staccato probability")
+    pianoteq_gesture_length.show_plot("Pianoteq gesture length")
+    pianoteq_gesture_rit_factor.show_plot("Pianoteq rit factor")
+    pianoteq_filler_probability.show_plot("Pianoteq filler probability")
+    crackliness.show_plot("SC instrument crackliness")
+    sc_gesture_length.show_plot("SC instrument gesture length")
+    sc_register.show_plot("SC instrument register")
+
+
+======================================================================
+=== FILE: scamp:Tutorial/11_nested_tempi/nested_tempi.py
+======================================================================
+
+"""
+SCAMP Example: Nested Tempi (Recorded on Session)
+
+Recorded from the session/master clock.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import itertools
+
+s = Session()
+
+trumpet = s.new_part("trumpet", default_spelling_policy="c phrygian")
+trombone = s.new_part("trombone", default_spelling_policy="c phrygian", clef_preference="bass")
+
+trumpet_note_pattern = itertools.cycle([67, 72, 67, 68])
+trombone_note_pattern = itertools.cycle([60, 55, 48, 49, 48])
+
+
+# A forked function runs on its own child clock, nested under the session that forked it.
+def trumpet_part():
+    # play the trumpet figure in eighth notes until the session reaches beat 3
+    while s.beat &lt; 3:
+        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
+
+    # slow this child clock to half its current rate over the next 7 beats of the parent
+    # note that this doesn't necessarily mean that we will land on the beat in this child clock
+    # `align_to=MetricPhaseTarget(0)` is what ensures that that happens.
+    set_rate_target(0.5, Moment.after_time(7), align_to=MetricPhaseTarget(0))
+
+    # keep playing eighth notes until the session reaches beat 16
+    while s.beat &lt; 16:
+        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
+
+
+# speed the whole session up to 100 BPM over its first 14 beats
+s.set_tempo_target(100, Moment.after_beats(14))
+s.fork(trumpet_part)
+# transcribe from the session's main timeline -- the default when no clock is given
+s.start_transcribing()
+
+# play the trombone figure in quarter notes until the session reaches beat 16
+while s.beat &lt; 16:
+    trombone.play_note(next(trombone_note_pattern), 1, 1)
+
+# Stop recording and show the result
+performance = s.stop_transcribing()
+performance.to_score(time_signature="3/4").show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/11_nested_tempi/nested_tempi_child_clock.py
+======================================================================
+
+"""
+SCAMP Example: Nested Tempi (Recorded on Child Clock)
+
+Recorded from the forked child clock.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import itertools
+
+s = Session()
+
+trumpet = s.new_part("trumpet", default_spelling_policy="c phrygian")
+trombone = s.new_part("trombone", default_spelling_policy="c phrygian", clef_preference="bass")
+
+trumpet_note_pattern = itertools.cycle([67, 72, 67, 68])
+trombone_note_pattern = itertools.cycle([60, 55, 48, 49, 48])
+
+
+# A forked function runs on its own child clock, nested under the session that forked it.
+def trumpet_part():
+    # play the trumpet figure in eighth notes until the session reaches beat 3
+    while s.beat &lt; 3:
+        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
+
+    # slow this child clock to half its current rate over the next 7 beats of the parent
+    # note that this doesn't necessarily mean that we will land on the beat in this child clock
+    # `align_to=MetricPhaseTarget(0)` is what ensures that that happens.
+    set_rate_target(0.5, Moment.after_time(7), align_to=MetricPhaseTarget(0))
+
+    # keep playing eighth notes until the session reaches beat 16
+    while s.beat &lt; 16:
+        trumpet.play_note(next(trumpet_note_pattern), 1, 0.5)
+
+
+# speed the whole session up to 100 BPM over its first 14 beats
+s.set_tempo_target(100, Moment.after_beats(14))
+# fork returns the child clock it created, which we hand to the transcriber below
+trumpet_clock = s.fork(trumpet_part)
+# transcribe from the trumpet clock's timeline, so the same music is notated against its tempo curve
+s.start_transcribing(clock=trumpet_clock)
+
+# play the trombone figure in quarter notes until the session reaches beat 16
+while s.beat &lt; 16:
+    trombone.play_note(next(trombone_note_pattern), 1, 1)
+
+# Stop recording and show the result
+performance = s.stop_transcribing()
+performance.to_score(time_signature="3/4").show()
+
+
+======================================================================
+=== FILE: scamp:Time &amp; clocks/Advanced/metric_phase.py
+======================================================================
+
+"""
+SCAMP Example: Metric Phase
+
+Rate targets aligned to metric phase, so accelerations and decelerations land on downbeats.
+"""
+
+from scamp import *
+
+s = Session(tempo=120)
+
+piano = s.new_part("piano")
+metronome = s.new_part("woodblock")
+
+def metro():
+    while True:
+        metronome.play_note(90, 1.0, 1)
+        metronome.play_note(85, 1.0, 1)
+        metronome.play_note(85, 1.0, 1)
+
+def chromatic_accel():
+    set_rate_target(2, Moment.after_beats(8), align_to=Moment.after_time(6))
+    for p in range(48, 80):
+        piano.play_note(p, 1, 0.25)
+    print(current_clock().beat, current_clock().time)
+    for _ in range(12):
+        piano.play_note(80, 1, 0.5)
+        piano.play_note(75, 1, 0.5)
+    set_rate_target(1, Moment.after_beats(8), align_to=Moment.after_time(6))
+    for p in range(80, 48, -1):
+        piano.play_note(p, 1, 0.25)
+    for _ in range(6):
+        piano.play_note(48, 1, 0.5)
+        piano.play_note(43, 1, 0.5)
+    set_rate_targets([3, 0.5, 2, 1], [Moment.after_beats(8), Moment.after_beats(15), Moment.after_beats(18), Moment.after_beats(21)], align_to=MetricPhaseTarget(0, 3))
+    print(current_clock().beat)
+    for _ in range(7):
+        for i in range(12):
+            piano.play_note(60 + i, 1, 0.25)
+    print(current_clock().beat)
+    for _ in range(10):
+        piano.play_note(72, 1, 0.5)
+
+
+s.start_transcribing()
+accel_clock = fork(chromatic_accel)
+metro_clock = fork(metro)
+# Let the metronome run until the chromatic accel line is done, then cut it off.
+wait_for_clock_to_finish(accel_clock)
+metro_clock.kill()
+s.stop_transcribing().to_score(time_signature="3/4").show()</pre>
+</body>
+</html>

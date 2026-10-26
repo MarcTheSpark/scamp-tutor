@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>examples/playback.txt</title>
+<style>pre { white-space: pre-wrap; }</style>
+</head>
+<body>
+<pre>
+
+======================================================================
+=== FILE: scamp:Tutorial/19_playback_implementations.py
+======================================================================
+
+"""
+SCAMP Example: Playback Implementations
+
+Shows how to create parts that use different implementations for playback. This assumes that you are connecting to
+a midi device on port zero.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+# Calling "new_part" results in a default SoundfontPlaybackImplementation
+# (which automatically searches for a matching preset in the default bundled soundfont)
+piano = s.new_part("piano")
+
+# Calling "new_midi_part" gives the instrument a MIDIStreamPlaybackImplementation
+# in this case, sending a midi stream to an external steel pan VST instrument
+# ("Midi through" is a linux-specific virtual midi cable; use IAC on a mac,
+# and download loopmidi or similar on windows)
+steel_pan = s.new_midi_part("steel pan", "Midi through Port 0")
+# Use this line to probe for available midi output devices:
+# print_available_midi_output_devices()
+
+# Calling "new_osc_part" gives the instrument an OSCPlaybackImplementation
+# This one is set up to communicate with the supercollider instrument in the osc_to_supercollider example
+synth = s.new_osc_part("vibSynth", port=57120, ip_address="127.0.0.1")
+
+# You can add multiple PlaybackImplementations to the same part like this
+all_at_once = s.new_part("all together", preset="piano") \
+               .add_streaming_midi_playback("Midi through Port 0") \
+               .add_osc_playback(port=57120, ip_address="127.0.0.1",
+                                 message_prefix="vibSynth")
+
+# Calling "new_silent_part" results in an instrument with no PlaybackImplementation
+silent = s.new_silent_part("silent")
+
+s.start_transcribing()
+
+for _ in range(3):
+    piano.play_note(60, 1, 0.5)
+    steel_pan.play_note(62, 1, 0.5)
+    synth.play_note(63, 1, 0.5)
+    all_at_once.play_note(66, 1, 0.5)
+
+silent.play_note(60, 1, 2)
+
+s.stop_transcribing().to_score(time_signature="2/4").show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/24_osc_to_supercollider/osc_to_supercollider.py
+======================================================================
+
+"""
+SCAMP Example: OSC to SuperCollider
+
+Plays back notes by sending OSC messages to the SuperCollider process.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import random
+
+random.seed(42)
+
+s = Session()
+
+# on the other end, an OSC receiver is setup to play notes that take vibrato and OSC messages as well as the usual
+vib = s.new_osc_part("vibrato", 57120)
+
+s.start_transcribing()
+
+# any property entries starting or ending with "param" will be treated as extra playback parameters
+while s.beat &lt; 20:
+    note_length = random.uniform(0.3, 3)
+    # glissando between three random values
+    pitch_env = [random.randint(60, 82) for _ in range(3)]
+    volume_env = random.choice([
+        # percussive envelope
+        Envelope.ar(0.1, note_length - 0.1),
+        # fp crescendo envelope
+        Envelope([1, 0.2, 1], [0.1, note_length - 0.1], curve_shapes=[-2, 3])
+    ])
+    vib_width_env = [random.uniform(0, 5) for _ in range(2)]
+    vib_freq_env = [random.uniform(3, 13) for _ in range(2)]
+    vib.play_note(
+        pitch_env, volume_env, note_length,
+        {"param_vibWidth": vib_width_env,
+         "param_vibFreq": vib_freq_env},
+        blocking=False
+    )
+    wait(random.uniform(0.5, 3))
+
+wait_for_children_to_finish()
+
+performance = s.stop_transcribing()
+
+engraving_settings.max_voices_per_staff = 1
+performance.to_score(max_divisor=6, simplicity_preference=3).show()
+
+
+
+======================================================================
+=== FILE: scamp:Tutorial/24_osc_to_supercollider/receive_from_supercollider.scd
+======================================================================
+
+// --------------------------------------------------------------------------------------------------
+// Corresponding SuperCollider Code for OSC-to-SuperCollider SCAMP example. Run this before the Python
+// script by booting the server and then running the code blocks below in order.
+// --------------------------------------------------------------------------------------------------
+
+
+// If it's not working, make sure the port printed here matches the port that the Python file is sending to
+NetAddr.langPort.postln;
+
+
+(
+// ----------------------------- 1) Define vib synth ----------------------------------
+SynthDef(\vibSynth, { |out=0, freq=440, gain=0.1, vibFreq=20, vibWidth=0.5, gate=1|
+	var envelope = EnvGen.ar(Env.asr(releaseTime:0.5), gate, doneAction: 2);
+	var vibHalfSteps = SinOsc.ar(vibFreq) * vibWidth;
+	var vibFreqMul = 2.pow(vibHalfSteps / 12);
+	var vibSine =  SinOsc.ar(freq * vibFreqMul) * gain;
+	Out.ar(out, (envelope * vibSine / 5) ! 2);
+}, [\ir, 0.1, 0.1, 0.1, 0.1, \kr]).add;
+)
+
+
+(
+// ---------------------------- 2) Set up OSC Receivers -------------------------------
+
+// This dictionary maps the note-id's sent by SCAMP to their associated Synths
+~notesPlaying = Dictionary();
+
+// START NOTE
+OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], pitch = msg[2], volume = msg[3];
+	// Start a new Synth and place it in the ~notesPlaying dictionary under its associated id
+	~notesPlaying.put(id, Synth(\vibSynth,
+		[\freq, pitch.midicps,
+		 \gain, (-40 * (1-volume)).dbamp]
+	));
+}, '/vibrato/start_note');
+
+// END NOTE
+OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1];
+	~notesPlaying[id].set(\gate, 0);
+}, '/vibrato/end_note');
+
+// CHANGE PITCH
+OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], pitch = msg[2];
+	~notesPlaying[id].set(\freq, pitch.midicps);
+}, '/vibrato/change_pitch');
+
+// CHANGE VOLUME
+OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], volume = msg[2];
+	~notesPlaying[id].set(\gain,
+		(-40 * (1-volume)).dbamp);
+}, '/vibrato/change_volume');
+
+// CHANGE VIBRATO FREQUENCY
+OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], freq = msg[2];
+	~notesPlaying[id].set(\vibFreq, freq);
+}, '/vibrato/change_parameter/vibFreq');
+
+// CHANGE VIBRATO WIDTH
+OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], width = msg[2];
+	~notesPlaying[id].set(\vibWidth, width);
+}, '/vibrato/change_parameter/vibWidth');
+)
+
+
+======================================================================
+=== FILE: scamp:Tutorial/24_osc_to_supercollider/receive_from_supercollider_scamputils.scd
+======================================================================
+
+// --------------------------------------------------------------------------------------------------
+// Corresponding SuperCollider Code for OSC-to-SuperCollider SCAMP example. Run this before the Python
+// script by booting the server and then running the code blocks below in order.
+// --------------------------------------------------------------------------------------------------
+
+
+// If it's not working, make sure the port printed here matches the port that the Python file is sending to
+NetAddr.langPort.postln;
+
+
+(
+// ----------------------------- 1) Define vib synth ----------------------------------
+ScampUtils.instrumentFromSynthDef(
+	SynthDef(\vibrato, { |out=0, freq=440, volume=0.1, vibFreq=20, vibWidth=0.5, gate=1|
+		var envelope = EnvGen.ar(Env.asr(releaseTime:0.5), gate, doneAction: 2);
+		var vibHalfSteps = SinOsc.ar(vibFreq) * vibWidth;
+		var vibFreqMul = 2.pow(vibHalfSteps / 12);
+		var vibSine =  SinOsc.ar(freq * vibFreqMul) * volume;
+		Out.ar(out, (envelope * vibSine / 5) ! 2);
+	}, [\ir, 0.1, 0.1, 0.1, 0.1, \kr]);
+)
+)
+
+
+======================================================================
+=== FILE: scamp:Playback/Playback implementations/osc_playback/OSCListenerPython.scd
+======================================================================
+
+NetAddr.langPort;  // Run this line to get the port to send to from Python
+
+( // Define the Synths
+
+// Simple FM Sine thing
+SynthDef(\testSynth, { |out=0, freq=440, gain=0.1, modulationFreq=20, gate=1|
+	var synth = EnvGen.ar(Env.asr(releaseTime:0.5), gate, doneAction: 2) * (SinOsc.ar(freq) * SinOsc.ar(modulationFreq) * gain);
+	Out.ar(out, synth ! 2);
+}).add;
+
+// (from <a href="https://sccode.org/1-54H">https://sccode.org/1-54H</a>)
+SynthDef("hihat", {arg out = 0, gain = 0.5, att = 0.01, rel = 0.2, ffreq = 6000;
+	var env, snd;
+	env = Env.perc(att, rel, gain).kr(doneAction: 2);
+	snd = WhiteNoise.ar;
+	snd = HPF.ar(in: snd, freq: ffreq, mul: env);
+	Out.ar(out, snd ! 2);
+}).add;
+)
+
+( // Set up the OSC Listeners
+
+// -------------------- FM SINES -----------------------
+
+~notesPlaying = Dictionary();
+
+// START NOTE
+o = OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], pitch = msg[2], volume = msg[3];
+	~notesPlaying.put(id, Synth(\testSynth, [\freq, pitch.midicps, \gain, (-40 * (1-volume)).dbamp]));
+}, '/fm_sines/start_note');
+
+// END NOTE
+o = OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1];
+	~notesPlaying[id].set(\gate, 0);
+}, '/fm_sines/end_note');
+
+// CHANGE PITCH
+o = OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], pitch = msg[2];
+	~notesPlaying[id].set(\freq, pitch.midicps);
+}, '/fm_sines/change_pitch');
+
+// CHANGE VOLUME
+o = OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], volume = msg[2];
+	~notesPlaying[id].set(\gain, (-40 * (1-volume)).dbamp);
+}, '/fm_sines/change_volume');
+
+// CHANGE THE MODULATION FREQUENCY
+o = OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], fm = msg[2];
+	~notesPlaying[id].set(\modulationFreq, fm);
+}, '/fm_sines/change_parameter/fm');
+
+
+// -------------------- HiHat -----------------------
+
+// START NOTE
+o = OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], pitch = msg[2], volume = msg[3];
+	~notesPlaying.put(id, Synth(\hihat, [\ffreq, pitch.midicps, \gain, (-40 * (1-volume)).dbamp]));
+}, '/hihat/start_note');
+
+// CHANGE PITCH
+o = OSCFunc({ arg msg, time, addr, recvPort;
+	var id = msg[1], pitch = msg[2];
+	~notesPlaying[id].set(\ffreq, pitch.midicps);
+}, '/hihat/change_pitch');
+)
+
+
+======================================================================
+=== FILE: scamp:Playback/Playback implementations/osc_playback/osc_instrument_example.py
+======================================================================
+
+"""
+The main python script, which talks to the OSC listener in SuperCollider
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import random
+
+
+s = Session()
+
+# The port here must match the result of NetAddr.langPort in SuperCollider
+fm_sines = s.new_osc_part("fm_sines", 57120)
+hihat = s.new_osc_part("hihat", 57120)
+
+
+def fm_sines_part():
+    while True:
+        fm_sines.play_note([random.random() * 20 + 60, random.random() * 20 + 60],
+                           [[1, 0], [1], [-2]], random.random() * 3 + 0.3,
+                           {"fm_param": [random.random() * 30, random.random() * 30]},
+                           blocking=False)
+        wait(random.random() * 3)
+
+
+def hihat_part():
+    while True:
+        hihat.play_note(80 + random.random() * 40, random.random(), 0.25)
+
+
+s.fork(fm_sines_part)
+s.fork(hihat_part)
+s.wait_forever()
+
+
+
+
+======================================================================
+=== FILE: scamp_extensions:Playback/Playback implementations/multipreset_example.py
+======================================================================
+
+"""
+SCAMP Example: MultiPresetInstrument
+
+Demo of the MultiPresetInstrument, a convenience meta-instrument for subsuming several different playing techniques
+and their associated notations under a single instrument interface.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.playback import MultiPresetInstrument
+
+s = Session(tempo=90)
+
+# This sets up a new viola instrument within Session s that can do arco, pizzicato and harmonic playback
+# the first line creates the instrument using Session s and names it "viola".
+# we can then add presets to the instrument, giving each preset a name, a ScampInstrument or soundfont preset to use,
+# and properties/notations that get bundled with the notes when that preset is used.
+# `bundled_properties` get attached to every note played by a preset
+# `bundled_properties_on_switch` get attached to the first note played by a preset when we switch to it
+# `bundled_properties_on_switch_away` get attached to the next note when we switch away from a preset. This is usually
+# a "cancelling" notation, like "arco" after a section of "pizz"
+viola = MultiPresetInstrument(s, "Viola").\
+    add_preset("arco", "viola").\
+    add_preset("pizz", "pizzicato", bundled_properties_on_switch="text: pizz",
+               bundled_properties_on_switch_away="text: arco").\
+    add_preset("harmonic", "bowed glass", bundled_properties="notehead: harmonic, pitch + 12")
+
+s.start_transcribing()
+
+# when playing notes/chords, the MultiPresetInstrument has an extra `preset` argument that can be used to specify
+# the desired preset to use.
+viola.play_note(60, 1, 2)
+viola.play_note(55, 1, 1, preset="pizz")
+viola.play_note(67, 1, 1.5, preset="harmonic")
+viola.play_note(68, 1, 0.5, preset="pizz")
+viola.play_note(67, 1, 0.5, preset="pizz")
+viola.play_note(65, 1, 0.5, preset="pizz")
+viola.play_note(63, 1, 1)
+viola.play_note(62, 1, 1)
+viola.play_note(67, 1, 1, preset="harmonic")
+note_handle = viola.start_note(60, 1.0)
+note_handle.change_pitch(67, 3)
+wait(3)
+note_handle.end()
+note_handle = viola.start_note(67, 1.0, preset="pizz")
+note_handle.change_pitch(60, 1)
+wait(1)
+note_handle.end()
+note_handle = viola.start_note(60, 1.0, preset="pizz")
+note_handle.change_pitch(67, 1)
+wait(1)
+note_handle.end()
+note_handle = viola.play_note(67, 1.0, 1.0, preset="harmonic")
+
+viola.play_note(60, 1, 3)
+
+s.stop_transcribing().to_score(time_signature="3/4").show()
+
+
+
+
+======================================================================
+=== FILE: scamp:Tutorial/16_start_and_end_note.py
+======================================================================
+
+"""
+SCAMP Example: Start and End Note
+
+Plays notes by calling start_note (or start_chord) and then manipulating them afterward, instead of defining the course
+of the note from the beginning with "play_note". The "start_note" and "start_chord" functions return handles that can
+be used to change the pitch, volume or other parameters of the note after they have started, as well as end the note.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+violin = s.new_part("violin")
+
+s.start_transcribing()
+
+# start a violin note on middle C with volume 1. By default a started note is fully fixed (it plays at the given
+# velocity and can't change); pass fixed=False so we can gliss its pitch.
+note_handle1 = violin.start_note(60, 1.0, fixed=False)
+wait(1)
+# after 1 second, start a chord on Bb4 / D5 / F#5 with volume 1
+note_handle2 = violin.start_chord([70, 74, 78], 1.0, fixed=False)
+# change the pitch of the first note to F#3, glissing over the course of 2 seconds
+note_handle1.change_pitch(54, 2.0)
+wait(1)
+# one second later, start changing the pitch of the chord so that its first note (the Bb4) glisses up to E5
+# over the course of one second. The other notes of the chord will move in parallel to Ab5 and C6.
+note_handle2.change_pitch(76, 1.0)
+wait(2)
+# after 2 seconds, end the first note and start a fade out to volume 0 over the course of 2 seconds on the chord.
+note_handle1.end()
+note_handle2.change_volume(0, 2)
+# wait 2 seconds and then end the second chord
+wait(2)
+note_handle2.end()
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Time &amp; clocks/Forking &amp; simultaneity/chords_example.py
+======================================================================
+
+"""
+SCAMP Example: Chords and Noteheads
+
+Chords with per-note noteheads, and a start_chord handle whose pitches change over time. Under the hood,
+`play_chord` plays all but one of its notes with `blocking=False` and the last one blocking, so the notes
+sound together.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+piano = s.new_part("piano")
+
+s.start_transcribing()
+
+# this makes the whole chord diamond noteheads
+handle = piano.start_chord(([60, 56], 64, 69), 0.5, "notehead: diamond")
+
+handle.change_pitch((62, 58, 60), (1/3, 1/3, 1/3), transition_curve_shape_or_shapes=(5, 5, 5))
+
+engraving_settings.glissandi.control_point_policy = "split"
+
+wait(2)
+handle.end()
+
+# this gives separate noteheads for separate pitches
+piano.play_chord((60, 64, 69), 0.5, 2.0, "noteheads: diamond / normal / cross")
+
+# noteheads are assigned in the order of the pitch tuple given, not in order from low to high
+# so here, middle C has a normal notehead, E has a diamond, and A has a cross
+piano.play_chord((64, 60, 69), 0.5, 2.0, "noteheads: diamond / normal / cross")
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/20_note_properties.py
+======================================================================
+
+"""
+SCAMP Example: Note Properties
+
+Shows how the fourth (optional) properties argument to "play_note" can be used to affect other aspects of playback and
+notation, such as articulation and noteheads. All properties are ultimately converted into a NotePropertiesDictionary;
+If a string is given, it is parsed into key / value pairs. In many cases, e.g. with "staccato" below, SCAMP can infer
+that it is referring to an articulation.
+"""
+
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+piano = s.new_part("piano")
+
+s.start_transcribing()
+
+# passing comma-separated key value pairs
+piano.play_note(60, 0.5, 1, "notehead: x, articulation: staccato")
+# just a value; articulation type inferred
+piano.play_note(60, 0.5, 1, "staccato")
+# "play_chord" can take multiple noteheads separated by slashes
+piano.play_chord([60, 65], 0.5, 1, "noteheads: x/harmonic")
+# passing a dictionary also possible
+piano.play_note(60, 0.5, 1, {
+    "articulations": ["tenuto", "accent"],
+})
+
+# the properties argument can be used to specify which voice a note should appear in
+# you can also add dynamic text, although it doesn't cause any change in playback within SCAMP
+piano.play_note(62, 0.5, 0.5, "voice: 1, dynamic: ff")
+piano.play_note(60, 0.5, 0.5, "voice: 2")
+piano.play_note(58, 0.5, 0.5, "voice: 2")
+piano.play_note(62, 0.5, 0.5, "voice: 2")
+piano.play_note(64, 0.5, 0.5, "voice: 1")
+piano.play_note(62, 0.5, 0.5, "voice: 2")
+piano.play_note(60, 0.5, 0.5, "voice: 2")
+piano.play_note(64, 0.5, 0.5, "voice: 2")
+
+# You can also specify voices by name instead of number. In this case, scamp will
+# simply keep notes in the same named voice together, determining the number automatically
+piano.play_note(62, 0.5, 0.5, "voice: top_notes, dynamic: pp")
+piano.play_note(60, 0.5, 0.5, "voice: bottom_notes")
+piano.play_note(58, 0.5, 0.5, "voice: bottom_notes")
+piano.play_note(62, 0.5, 0.5, "voice: bottom_notes")
+piano.play_note(64, 0.5, 0.5, "voice: top_notes")
+piano.play_note(62, 0.5, 0.5, "voice: bottom_notes")
+piano.play_note(60, 0.5, 0.5, "voice: bottom_notes")
+piano.play_note(64, 0.5, 0.5, "voice: bottom_notes")
+
+# You can also use the properties argument for playback adjustments, which do not affect notation
+# This will cut the length of the note in half, and play it up an octave
+piano.play_note(65, 0.5, 1, "playback_adjustment: length * 0.5, pitch + 12")
+# Usually it's not necessary to specify that it's a playback adjustment.
+# This will play the note with a gliss up and down a half step
+piano.play_note(65, 0.5, 1, "pitch + [0, 2, 0]")
+# This will change the playback length to two beats, but still notate a quarter note
+# The result is that the note bleeds into the following beat (potentially good for legato)
+piano.play_note(65, 0.5, 1, "length = 2")
+# Internally all of these strings are converted to a NotePlaybackAdjustment object, which you can give directly
+# This sets the note to play back with a totally different pitch volume and duration than notated
+piano.play_note(65, 0.5, 1, NotePlaybackAdjustment.set_params(pitch=78, volume=0.9, length=0.1))
+
+# Under the hood, everything we pass to the properties argument gets converted to a NoteProperties object
+# We can actually create our own NoteProperties objects, which bundle together several properties, perhaps with
+# a specified playback adjustment. Then, we can pass this to the properties argument of play_note. Here, we create
+# the wiggle property, which puts a mordent and the italic word "ZIG" on a note, and makes it bend up and down.
+wiggle = NoteProperties([
+    "text: *ZIG*",
+    "notation: inverted mordent",
+    NotePlaybackAdjustment.add_to_params(pitch=Envelope([0, 1, 0], [0.1, 0.1]))
+])
+piano.play_note(62, 0.5, 0.5, wiggle)
+piano.play_note(64, 0.5, 0.5, "staccato")
+piano.play_note(65, 0.5, 0.5, [wiggle, "staccato"])
+piano.play_note(63, 0.5, 0.5, "staccato")
+piano.play_note(66, 0.5, 2, [wiggle, "accent"])
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/23_special_notations.py
+======================================================================
+
+"""
+SCAMP Example: Special Notations
+
+Ornaments, tremolo and other single-note notations. These notational details are passed to the
+fourth, optional "properties" argument of play_note.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+from scamp import *
+
+# these lines set an playback adjustment to occur on notes with the "turn" notation, bending the pitch up and down
+# a similar approach could be taken with other notations.
+turn_pitch_envelope = Envelope([0, 0, 1, 1, 0, 0, -1, -1, 0, 0], [0.07, 0, 0.07, 0, 0.07, 0, 0.07, 0, 0.07])
+playback_settings.set_playback_adjustment("turn", NotePlaybackAdjustment.add_to_params(pitch=turn_pitch_envelope))
+
+s = Session()
+violin = s.new_part("Violin")
+s.start_transcribing()
+
+for pitch in [60, 64, 67, 72]:
+    violin.play_note(pitch, 1, 0.5)
+
+violin.play_note(74, 1, 1, "tremolo")
+violin.play_note(75, 1, 0.5, "tremolo1")
+violin.play_note(76, 1, 0.25, "tremolo2")
+violin.play_note(78, 1, 0.25, "tremolo3")
+violin.play_note(77, 1, 1.75, "turn, tremolo, fermata")
+violin.play_note(84, 1, 0.25, "mordent")
+violin.play_note(83, 1, 1, "inverted mordent")
+violin.play_note(82, 1, 1, "trill mark")
+violin.play_note(81, 1, 1, "open-string")
+violin.play_note(80, 1, 1, "up-bow")
+violin.play_note(79, 1, 1, "down-bow")
+violin.play_note(78, 1, 1, "stopped")
+violin.play_note(77, 1, 1, "snap-pizzicato")
+
+violin.play_chord([60, 64, 67, 72], 1, 1, "arpeggiate")
+violin.play_chord([60, 64, 67, 72], 1, 1, "arpeggiate down")
+violin.play_chord([60, 64, 67, 72], 1, 1, "fermata, arpeggiate up")
+
+performance = s.stop_transcribing()
+performance.to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Notation &amp; engraving/Basics/record_and_export_midi.py
+======================================================================
+
+"""
+SCAMP Example: Export to MIDI File
+
+Records glissandi with microtonal pitches and playback params (fast-forwarded),
+then exports the performance as a MIDI file.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+import random
+from scamp import *
+
+
+random.seed(0)
+
+s = Session()
+s.set_rate_target(2, Moment.after_time(10))
+
+# s.fast_forward()
+
+clar = s.new_part("clarinet")
+piano = s.new_part("piano")
+
+performance = s.start_transcribing()
+
+
+def piano_part():
+    while True:
+        piano.play_note(random.randint(40, 58), random.uniform(0.3, 0.8), 0.5, "staccato")
+
+
+piano_clock = fork(piano_part)
+
+for p in [random.randint(50, 80) for _ in range(30)]:
+    clar.play_note([p, p + 1, p - 2], Envelope([0.8, 0.1, 1.0], [0.1, 1.0]), random.uniform(0.1, 2),
+                   f"param_10: {random.uniform(0, 1)}" if random.random() &lt; 0.5 else "param_10: [0, 1]")
+
+piano_clock.kill()
+s.stop_transcribing().export_to_midi_file("midi_export.mid")
+
+======================================================================
+=== FILE: scamp:Playback/MIDI CC &amp; arbitrary parameters/scamp_to_max_monophonic/MonoSender.py
+======================================================================
+
+"""
+SCAMP Example: Max Sender (monophonic)
+
+Sends monophonic notes with an extra playback parameter over OSC to Max. See the accompanying Max patch, which
+shows how to receive and route those messages.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from random import random
+
+s = Session()
+
+maxinst = s.new_osc_part("maxinst", 9000)
+
+while True:
+    for p in range(65, 80):
+        maxinst.play_note(p, [0.2, 1.0], 1.0, "param_overdrive:[0, 0.8, 0]")
+        if random() &lt; 0.5:
+            wait(random())
+        
+
+======================================================================
+=== FILE: scamp:Playback/MIDI CC &amp; arbitrary parameters/scamp_to_max_polyphonic/PolySender.py
+======================================================================
+
+"""
+SCAMP Example: Max Sender (polyphonic)
+
+Sends overlapping glissando notes over OSC to Max. See the accompanying Max patch, which receives and routes
+those messages using a poly object.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import random
+s = Session()
+
+maxinst = s.new_osc_part("maxinst", 9000)
+
+while True:
+    maxinst.play_note(
+        [random.uniform(60, 80), random.uniform(60, 80)],
+        [0.2, 1.0],
+        5.0,
+        "param_overdrive:[0, 0.8, 0]",
+        blocking=False
+    )
+    wait(random.uniform(0, 5))
+
+
+======================================================================
+=== FILE: scamp:Playback/Other/save_and_load_performance/load_and_play_performance.py
+======================================================================
+
+"""
+SCAMP Example: Load and Play a Performance
+
+Loads the Ensemble and Performance saved by save_performance.py and plays the
+performance back under a gradually accelerating tempo.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+shaku = s.new_part("shakuhachi")
+oboe = s.new_part("oboe")
+
+recorded_performance = Performance.load_from_json("perfShakoboe.json")
+
+s.tempo = 60
+s.set_tempo_target(300, Moment.after_time(40))
+
+while True:
+    print("(Re)starting performance.")
+    # by default, the performance plays on the currently active clock, forking all parts according to
+    # the tempo envelope at recording time. So the acceleration inside the recording is compounded with
+    # the gradual session-wide acceleration here.
+    # also, by default, we use the currently active session for the instruments.
+    recorded_performance.play()
+
+
+======================================================================
+=== FILE: scamp:Playback/Other/save_and_load_performance/save_performance.py
+======================================================================
+
+"""
+SCAMP Example: Save a Performance
+
+Saves an Ensemble and a recorded Performance to JSON, for the load_and_play_performance example.
+
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import random
+import math
+
+
+s = Session()
+
+shaku = s.new_part("shakuhachi")
+oboe = s.new_part("oboe")
+
+
+def oboe_part():
+    while True:
+        oboe.play_note(75 + random.random() * 7 + 15 * math.sin(get_beat() / 10), 0.4, 0.25)
+
+
+def shaku_part():
+    pentatonic = [0, 2, 4, 7, 9]
+    while True:
+        if random.random() &lt; 0.5:
+            shaku.play_note(66 + random.choice(pentatonic) + 12*random.randint(0, 2),
+                            Envelope([1.0, 0.2, 1.0, 1.0], [0.15, 0.85, 0.15], [0, 2, 0]),
+                            2.5, blocking=True)
+            wait(0.5 + random.choice([0, 0.5]))
+        else:
+            shaku.play_note(66 + random.choice(pentatonic) + 12*random.randint(0, 2), 1.0, 0.2*(1+random.random()*0.3))
+            wait(random.choice([1, 2, 3]))
+
+
+s.fork(oboe_part)
+s.fork(shaku_part)
+
+s.set_tempo_target(300, Moment.after_time(30))
+
+s.wait(15)
+s.start_transcribing()
+print("Starting transcription...")
+s.wait(15)
+performance = s.stop_transcribing()
+print("Stopped transcribing. Saving transcription.")
+
+performance.save_to_json("perfShakoboe.json")
+
+s.wait_forever()
+</pre>
+</body>
+</html>

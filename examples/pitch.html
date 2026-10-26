@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>examples/pitch.txt</title>
+<style>pre { white-space: pre-wrap; }</style>
+</head>
+<body>
+<pre>
+
+======================================================================
+=== FILE: scamp_extensions:Pitch/Scales &amp; microtonality/scale_example/scale_example.py
+======================================================================
+
+"""
+SCAMP Example: Scales
+
+Demo of the scamp_extensions Scale object, a highly flexible representation of a scale that can be indexed into
+infinitely in both directions from a root note. Scales can be microtonal (and even loaded from a scala file), and are
+constructed from intervals that can be expressed as either a frequency ratio, a distance in cents, or a combination
+of the two. Scales can also be transposed and modally rotated.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.pitch import Scale, ScaleType
+from fractions import Fraction
+
+s = Session(tempo=100)
+
+clarinet = s.new_part("clarinet")
+
+scales = {
+    "C blues": Scale.from_pitches([48, 51, 53, 54, 55, 58, 60]),
+    "Bb locrian": Scale.locrian(58),
+    "Microtonal example 1": Scale(ScaleType(26., 104., Fraction(3, 2), (600., Fraction(5, 4)), 2, (204., 2)), 55),
+    "C whole-half Octatonic": Scale.from_pitches([48, 50, 51]),
+    "C half-whole Octatonic": Scale.octatonic(48, whole_step_first=False),  # different means of construction
+    "C Melodic Minor": Scale.melodic_minor(48),
+    "D Acoustic": Scale.melodic_minor(50, modal_shift=3),  # the "acoustic" scale is a mode of the melodic minor
+    "Overtone Series": Scale(ScaleType(*(Fraction(n, 1) for n in range(2, 32))), 40, cycle=False),
+    "Microtonal example 2:": Scale.from_start_pitch_and_cent_or_ratio_intervals(
+        55, ["200.", "5/4", "200., 5/4", "3/2", "7/4", "2"]),
+    "Bohlen Pierce from Scala File": Scale.from_scala_file("bohlen_12.scl", 48)
+}
+
+scales["Bohlen Pierce Transposed"] = scales["Bohlen Pierce from Scala File"].transposed(7)
+
+for scale_name, scale in scales.items():
+    print("Playing notes of the {} scale.".format(scale_name))
+    for scale_degree in range(0, 16):
+        clarinet.play_note(scale[scale_degree], 1.0, 0.25)
+
+    print("Playing chords from the {} scale.".format(scale_name))
+    for scale_degree in range(0, 16):
+        clarinet.play_chord(scale[list(range(scale_degree, scale_degree + 5, 2))], 1.0, 0.25)
+
+
+======================================================================
+=== FILE: scamp:Tutorial/18_microtonal.py
+======================================================================
+
+"""
+SCAMP Example: Microtonal Playback and Notation
+
+Plays a few microtonal chords and notates them, turning on exact microtonal annotations.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+piano = s.new_part("piano")
+
+s.start_transcribing()
+
+# this causes the true pitches to be written into the score by the notes, as midi pitch values.
+engraving_settings.show_microtonal_annotations = True
+# this can be used to control the max precision shown in the annotations (the default is 2 digits).
+# in this case, it doesn't really do anything, since the pitches are already rounded to 1 digit
+engraving_settings.microtonal_annotation_digits = 3
+
+# playing microtonal pitches is as simple as using floating-point values for pitch
+piano.play_chord([62.7, 71.3], 1.0, 1)
+piano.play_chord([65.2, 70.9], 1.0, 1)
+piano.play_chord([71.5, 74.3], 1.0, 1)
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/21_pitch_spelling.py
+======================================================================
+
+"""
+SCAMP Example: Pitch Spelling
+
+Demonstrates the ability to define note pitch spelling using the optional properties argument to "play_note". This can
+be done by explicitly setting it, or by defining the key in which it resides.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+piano = s.new_part("piano")
+
+s.start_transcribing()
+
+# play and spell a note with a flat no matter what
+piano.play_note(63, 1.0, 1.0, "b")
+
+# play and spell a note with a sharp no matter what
+piano.play_note(63, 1.0, 1.0, "#")
+
+# define some notes and durations
+pitches = [65, 63, 61, 60]
+durations = [1/3] * 3 + [1]
+
+# play them and spell them in F minor
+for pitch, dur in zip(pitches, durations):
+    piano.play_note(pitch, 1.0, dur, "key: F minor")
+
+# play them and spell them in B major
+for pitch, dur in zip(pitches, durations):
+    piano.play_note(pitch, 1.0, dur, "key: B major")
+
+# a single spelling policy applies to each note of a chord
+piano.play_chord([61, 66], 1.0, 1.0, "#")
+piano.play_chord([61, 66], 1.0, 1.0, "b")
+# different spelling policies can be given to different notes of a chord, separated by slashes
+piano.play_chord([61, 66], 1.0, 1.0, "b/#")
+# although it's a little weird to do so, if the pitches are out of order, spellings are mapped in the order given
+piano.play_chord([66, 61], 1.0, 1.0, "b/#")
+# if too few individual spellings are given, the last one is repeated for additional notes
+piano.play_chord([61, 66, 70, 73], 1.0, 2.0, "#/b")
+
+# chromatic scale, using sharps for all black keys then flats for all black keys
+# (# or b would cause the white keys to be spelled with double-accidentals)
+for pitch in range(60, 72):
+    piano.play_note(pitch, 1.0, 0.25, "sharps")
+for pitch in range(72, 84):
+    piano.play_note(pitch, 1.0, 0.25, "flats")
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Pitch/Pitch spelling/voice_leading.py
+======================================================================
+
+"""
+SCAMP Example: Voice Leading / spelling policy
+
+Rule-based four-part voice leading over a scale, spelled in E major via the `default_spelling_policy` argument.
+"""
+
+from scamp import *
+from scamp_extensions.pitch import Scale
+
+s = Session()
+
+piano_treb = s.new_part("piano", clef_preference="treble", default_spelling_policy="E major")
+piano_bass = s.new_part("piano", clef_preference="bass", default_spelling_policy="E major")
+
+scl = Scale.major(64)
+
+bass_line = [-7, -6, -5, -9, -10, -12, -13, -10, -14]
+
+upper_parts = [-3, 0, 2]
+
+last_bass_degree = None
+
+def check_chord_tone(interval_with_bass):
+    return interval_with_bass % 7 in (0, 2, 4)
+
+def move_upper_parts(old_bass_note, new_bass_note):
+    bass_motion = new_bass_note - old_bass_note
+    bass_motion_mod = bass_motion % 7
+
+    if bass_motion_mod == 0:
+        return
+    elif bass_motion_mod in [1, 6]:
+        # stepwise motion
+        # move to nearest consonance in opposite motion to bass
+        direction_to_move = -1 if bass_motion &gt; 0 else 1
+    elif bass_motion_mod in [2, 4]:
+        direction_to_move = -1
+    else:
+        direction_to_move = 1
+        
+    for i, p in enumerate(upper_parts):
+        while not check_chord_tone(p - new_bass_note):
+            p += direction_to_move
+        upper_parts[i] = p
+
+s.start_transcribing()
+for bass_degree in bass_line:
+    if last_bass_degree is not None:
+        move_upper_parts(last_bass_degree, bass_degree)
+    last_bass_degree = bass_degree
+    piano_bass.play_note(scl.degree_to_pitch(bass_degree), 1, 1, blocking=False)
+    piano_treb.play_chord(scl.degree_to_pitch(upper_parts), 1, 1)
+
+scl.transpose(4)
+
+for bass_degree in bass_line:
+    if last_bass_degree is not None:
+        move_upper_parts(last_bass_degree, bass_degree)
+    last_bass_degree = bass_degree
+    piano_bass.play_note(scl.degree_to_pitch(bass_degree), 1, 1, "spelling: Ab major", blocking=False)
+    piano_treb.play_chord(scl.degree_to_pitch(upper_parts), 1, 1, "spelling: Ab major")
+
+s.stop_transcribing().to_score().show()
+
+======================================================================
+=== FILE: scamp:Tutorial/14_gliss_from_envelope.py
+======================================================================
+
+"""
+SCAMP Example: Glissando from Envelope
+
+Plays a glissando by passing an Envelope to the pitch parameter of play_note.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+viola = s.new_part("viola")
+
+e = Envelope(
+    [60, 72, 66, 70], [3 * 4/5, 1 * 4/5, 1 * 4/5],
+    curve_shapes=[2, -2, -2]
+)
+
+s.start_transcribing()
+
+viola.play_note(e, 1.0, 4)
+
+s.stop_transcribing().to_score().show()
+
+
+======================================================================
+=== FILE: scamp:Tutorial/15_envelope_shorthand.py
+======================================================================
+
+"""
+SCAMP Example: Envelope Shorthand
+
+Plays two glissandi by passing lists instead of envelopes to the pitch argument of play_note.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+viola = s.new_part("viola")
+
+s.start_transcribing()
+
+# a list of values results in evenly spaced glissando
+viola.play_note([60, 70, 55], 1.0, 4)
+
+# a list of lists can give values, durations, and (optionally) curve shapes
+# this results in segment durations of 2 and 1 and curve shapes of -2 and 0
+# NB: by default, envelopes created through list shorthand like this are
+# resized to the duration of the note, whereas Envelope objects passed directly
+# are not. So in this case, the durations of 2 and 1 get scaled up to 8/3 and 4/3
+# so that the whole envelope lasts 4 beats (the duration of the note).
+# You can change this behavior so that it resizes for Envelope objects as well,
+# or so that it never resizes, by altering playback_settings.resize_parameter_envelopes
+viola.play_note([[60, 70, 55], [2, 1], [-2, 0]], 1.0, 4)
+
+performance = s.stop_transcribing()
+performance.to_score().show()
+</pre>
+</body>
+</html>

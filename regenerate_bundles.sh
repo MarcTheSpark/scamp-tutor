@@ -58,3 +58,5 @@ PY
 
 cp "$repo/docs/INDEX.md" "$out/examples_index.md"
 echo "examples/examples_index.md <- docs/INDEX.md"
+
+python3 "$here/build_html.py"

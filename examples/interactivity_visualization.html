@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>examples/interactivity_visualization.txt</title>
+<style>pre { white-space: pre-wrap; }</style>
+</head>
+<body>
+<pre>
+
+======================================================================
+=== FILE: scamp:Tutorial/26_keyboard_input.py
+======================================================================
+
+"""
+SCAMP EXAMPLE: Computer Keyboard Input
+
+(WARNING: consumes key events and makes the keyboard otherwise unresponsive. To avoid this, you can remove the
+suppress=True flag under register_keyboard_listener)
+
+Demonstration of receiving computer keyboard events and using them to play notes based on the key number. Any key
+whose number code lies within a reasonable range triggers the playback of a note of that MIDI pitch.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+piano = s.new_part("piano")
+
+# dictionary mapping keys that are down to the NoteHandles used to manipulate them.
+notes_started = {}
+
+
+def key_down(name, number):
+    if 20 &lt; number &lt; 110 and number not in notes_started:
+        notes_started[number] = piano.start_note(number, 0.5)
+
+
+def key_up(name, number):
+    if 20 &lt; number &lt; 110 and number in notes_started:
+        notes_started[number].end()
+        del notes_started[number]
+
+
+# note: suppress=True causes keyboard events to be consumed by this script, effectively disabling the keyboard
+s.register_keyboard_listener(on_press=key_down, on_release=key_up, suppress=True)
+s.wait_forever()
+
+
+======================================================================
+=== FILE: scamp:Notation &amp; engraving/From live input/keyboard_input_with_notation.py
+======================================================================
+
+"""
+SCAMP EXAMPLE: Notating Computer Keyboard Input
+
+(WARNING: consumes key events and makes the keyboard otherwise unresponsive. To avoid this, you can remove the
+suppress=True flag under register_keyboard_listener)
+
+Same as Computer Keyboard Input, except that a metronome is playing back while the user plays notes with the
+keyboard, and the result is rendered as music notation.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein .&lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+piano = s.new_part("piano")
+perc = s.new_part("power")
+s.start_transcribing(piano)
+
+# dictionary mapping keys that are down to the NoteHandles used to manipulate them.
+notes_started = {}
+
+
+def key_down(name, number):
+    if number == 27:
+        s.kill()
+        return
+
+    if 20 &lt; number &lt; 110 and number not in notes_started:
+        notes_started[number] = piano.start_note(number, 0.5)
+
+
+def key_up(name, number):
+    if 20 &lt; number &lt; 110 and number in notes_started:
+        notes_started[number].end()
+        del notes_started[number]
+
+
+def metro():
+    while True:
+        perc.play_note(60, 1, 1)
+
+
+fork(metro)
+
+# note: suppress=True causes keyboard events to be consumed by this script, effectively disabling the keyboard
+s.register_keyboard_listener(on_press=key_down, on_release=key_up, suppress=True)
+
+with s:
+    # the context manager captures clock (session) kill gracefully, but we also need to
+    # catch a KeyboardInterrupt if we want to build the score on ctrl-C
+    try:
+        wait_forever()
+    except KeyboardInterrupt:
+        pass
+
+s.stop_transcribing().to_score().show()
+
+======================================================================
+=== FILE: scamp_extensions:Interactivity &amp; visualization/Keyboard input/key_plane_example.py
+======================================================================
+
+"""
+SCAMP Example: Key Plane
+
+Maps the computer keyboard onto a 2D grid of pitches with scamp_extensions' KeyPlane; each key press
+starts a flute note whose pitch and volume come from its row and column.
+"""
+
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp_extensions.interaction import KeyPlane
+from scamp_extensions.utilities import remap
+from scamp import *
+
+s = Session()
+
+flute = s.new_part("flute")
+
+notes = {}
+
+
+def callback(coordinates, press_or_release, modifiers):
+    if press_or_release == "press":
+        print("Press at:", coordinates, "with modifiers", modifiers)
+        notes[coordinates] = flute.start_note(remap(coordinates[0], 60, 96, 0, 1), remap(coordinates[1], 0.3, 1, 0, 1))
+    else:
+        print("Release at:", coordinates, "with modifiers", modifiers)
+        if notes[coordinates]:
+            notes[coordinates].end()
+
+
+KeyPlane(callback, normalize_coordinates=True).start(blocking=True, suppress=True)
+
+
+======================================================================
+=== FILE: scamp:Tutorial/27_mouse_input.py
+======================================================================
+
+"""
+SCAMP EXAMPLE: Mouse Input
+
+(WARNING: consumes mouse events and makes the mouse otherwise unresponsive. To avoid this, you can remove the
+suppress=True flag under register_mouse_listener)
+
+Demonstration of receiving computer mouse events and using them to play notes based on x and y position.
+Notes are started on mouse down and released on mouse up.  Left click plays a piano note, and right click plays
+a flute note. X position controls pitch, Y controls volume. By moving the mouse after clicking, the pitch can be bent
+up and down and the volume can be changed.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+piano = s.new_part("piano")
+flute = s.new_part("flute")
+
+# information about a note that has been started
+note_started = None
+
+
+def mouse_down(x, y, button):
+    global note_started
+    pitch = 50 + 49 * x
+    note_started = {
+        # fixed=False so we can freely animate both pitch and volume (up or down); the explicit velocity=1 leaves
+        # expression headroom for volume to rise above its start value
+        "handle": (piano if button == "left" else flute).start_note(pitch, 1 - 0.8 * y, fixed=False, velocity=1),
+        "start_pitch": pitch,
+        "start_x": x
+    }
+
+
+def mouse_up(x, y, button):
+    global note_started
+    if note_started is not None:
+        note_started["handle"].end()
+        note_started = None
+
+
+def mouse_move(x, y):
+    if note_started is not None:
+        note_started["handle"].change_pitch(note_started["start_pitch"] + 4 * (x - note_started["start_x"]), 0.1)
+        note_started["handle"].change_volume(1 - 0.8*y, 0.1)
+
+
+# note: suppress=True causes mouse events to be consumed by this script, effectively disabling the mouse
+s.register_mouse_listener(on_move=mouse_move, on_press=mouse_down, on_release=mouse_up,
+                          relative_coordinates=True, suppress=True)
+s.wait_forever()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Algorithmic approaches/indispensibility_example.py
+======================================================================
+
+"""
+SCAMP Example: Indispensability
+
+Mouse position controls a rhythmic texture based on Barlow's beat indispensability (barlicity extension).
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+from scamp_extensions.composers.barlicity import *
+import random
+
+
+threshold = 0
+syncopation_chance = 0
+
+
+def mouse_move(x, y):
+    global threshold, syncopation_chance
+    syncopation_chance = x
+    threshold = y
+
+
+s = Session()
+
+s.register_mouse_listener(on_move=mouse_move, relative_coordinates=True)
+
+drum = s.new_part("taiko", (0, 116), num_channels=150)
+violin = s.new_part("violin")
+
+indispensibilities = get_indispensability_array(((2, 3), 2, 3, (2, 3), (2, 3, 2), (3, 2, 3, 3)), True)  # (5, 7), (7, 11)
+
+handle = None
+pitch = None
+
+while True:
+    for indispensibility in indispensibilities:
+        if indispensibility &gt; 0.9:
+            if handle is None:
+                pitch = 65 + (1 - threshold) * 25
+                handle = violin.start_note(pitch, 0.8)
+            elif random.random() &lt; 0.6:
+                handle.end()
+                handle = None
+        elif handle is not None:
+            handle.change_pitch(pitch + (1 - indispensibility) * random.uniform(-syncopation_chance * 15, syncopation_chance * 15), 0.15)
+
+        if random.random() &lt; syncopation_chance:
+            indispensibility = 1 - indispensibility
+        if indispensibility &gt; threshold:
+            drum.play_note(40 + int(80 * (1 - indispensibility)),
+                           0.5 + 0.5 * (indispensibility - threshold) / (1 - threshold), 0.1)
+        else:
+            wait(0.1)
+
+
+======================================================================
+=== FILE: scamp:Tutorial/25_MIDI_in_out.py
+======================================================================
+
+"""
+SCAMP Example: Live MIDI input and output
+
+Demonstration of receiving and sending live midi input to and from a midi keyboard.
+Every note received by the keyboard is echoed back to the midi device half a second later
+at 75% volume.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+s.print_available_midi_output_devices()
+
+# This assumes we want the first listed MIDI device.
+# To use a different device, give the number or name that
+# you get from printing available devices above.
+piano = s.new_midi_part("piano", midi_output_device=0,
+                        num_channels=15)
+
+
+# dictionary mapping keys that are down to the NoteHandles used to manipulate them.
+notes_started = {}
+
+
+def start_note(pitch, volume):
+    # start the copy-cat note and store the handle to it to end it later
+    notes_started[pitch] = piano.start_note(pitch, volume)
+
+
+def end_note(pitch):
+    # end the copy-cat note (if one has started)
+    if pitch in notes_started:
+        notes_started[pitch].end()
+        del notes_started[pitch]
+
+
+def midi_callback(midi_message):
+    code, pitch, volume = midi_message
+    # note on event in any channel
+    if volume &gt; 0 and 144 &lt;= code &lt;= 159:
+        # fork a copy-cat note to start a 5th higher at 75% volume after 0.5 seconds
+        normalized_volume = (volume / 127)
+        s.fork(start_note, args=(pitch + 7, normalized_volume * 0.75), when=Moment.after_time(0.5))
+    # note off (or note on with velocity 0) event in any channel
+    elif (volume == 0 and 144 &lt;= code &lt;= 159 or 128 &lt;= code &lt;= 143):
+        # fork the copy-cat note a 5th higher to end after 0.5 seconds
+        s.fork(end_note, args=(pitch + 7, ), when=Moment.after_time(0.5))
+
+
+s.register_midi_listener(0, midi_callback)
+s.wait_forever()
+
+
+======================================================================
+=== FILE: scamp:Interactivity &amp; visualization/MIDI input/midi_keyboard_mapper.py
+======================================================================
+
+"""
+SCAMP Example: MIDI Keyboard Mapper
+
+A script written at the request of Paul Timmermans, in which different pitches or ranges of pitches
+on the keyboard can be mapped to particular instruments and chords. The heart of the script is the
+dictionary `pitch_to_instrument_and_pitches`, which expresses, for each key, which pitches and on
+which instrument should be played.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+s = Session()
+
+# This is where you define all of the instrument that you want to play back notes with.
+# The `note_on_and_off_only=True` flag is helpful in keeping the midi messages simple if
+# your not doing any pitch bending, glissandi, microtonal stuff, or dynamic envelopes.
+# The `new_midi_part` call will open an outgoing midi stream, in this case to IAC, which
+# is a virtual midi cable that can be used (on macs) to route playback between applications
+piano = s.new_midi_part("pianoteq", "IAC", note_on_and_off_only=True)
+# The `new_part` calls create parts that play back using the default soundfont
+flute = s.new_part("flute", note_on_and_off_only=True)
+clarinet = s.new_part("clarinet", note_on_and_off_only=True)
+
+# This is where the magic happens! Each entry in this dictionary determines what happens
+# when you play a pitch in a certain key or range of keys.
+pitch_to_instrument_and_pitches = {
+    # this line says that if you play midi pitch 55, it will come out as pitch 77, played by the clarinet
+    55: [clarinet, 77],
+    # this line says that if you play midi pitch 43, it will come out as the cluster [60, 61, 62, 63] played by clarinet
+    43: [clarinet, [60, 61, 62, 63]],
+    # this line says that if you play a pitch between 65-72, it will come out as a chord played by the flute
+    # consisting of the note two half steps higher and two half-steps lower. "p" stands for the particular
+    # pitch that you play, since this is operating on a range of pitches
+    # Note the quotes! The strings used here aren't really a standard python thing; it was just the easiest way
+    # of making it work.
+    "65-72": [flute, "[p-2, p+2]"],
+    # this line says what to do if you play a pitch that isn't covered by the lines above. In this case, we play
+    # back with a piano, up an octave (since "p" is the pitch you played, "p+12" is that pitch up an octave.
+    "default": [piano, "p+12"]
+}
+
+# Put here the name of the device MIDI messages are coming in from
+MIDI_INPUT_DEVICE = "E-MU"
+
+# # Uncomment these lines if you want to see which midi input and output devices are available
+# print_available_midi_input_devices()
+# print_available_midi_output_devices()
+
+# --------------------------------------------- IMPLEMENTATION -----------------------------------------------
+
+# ----- process pitch_to_instrument_and_pitches -----
+processed_pitch_to_instrument_and_pitches = {}
+for key, value in pitch_to_instrument_and_pitches.items():
+    if isinstance(key, str) and "-" in key:
+        start_pitch, end_pitch = key.split("-")
+        for p in range(int(start_pitch), int(end_pitch) + 1):
+            processed_pitch_to_instrument_and_pitches[p] = value
+for key, value in pitch_to_instrument_and_pitches.items():
+    if not isinstance(key, str):
+        processed_pitch_to_instrument_and_pitches[key] = value
+            
+for key, value in processed_pitch_to_instrument_and_pitches.items():
+    instrument, pitches = value
+    if isinstance(pitches, str) and key != "default":
+        processed_pitch_to_instrument_and_pitches[key] = [instrument, eval(pitches, {}, {"p": key})]
+
+processed_pitch_to_instrument_and_pitches["default"] = pitch_to_instrument_and_pitches["default"]
+notes_down = [[] for _ in range(128)]
+pedal_held_notes = [[] for _ in range(128)]
+pedal_down = False
+
+
+def midi_callback(midi_message):
+    global notes_down, pedal_held_notes, pedal_down
+    # function that handles any incoming midi messages from the keyboard
+    print(midi_message)
+    code, pitch, volume = midi_message
+    if volume &gt; 0 and code == 144:
+        # note on message causes us to fork a new moonlight sonata gesture at the given pitch and volume
+        if pitch in processed_pitch_to_instrument_and_pitches:
+            instrument, pitches = processed_pitch_to_instrument_and_pitches[pitch]
+        else:
+            instrument, pitches = processed_pitch_to_instrument_and_pitches["default"]
+            if isinstance(pitches, str):
+                pitches = eval(pitches, {}, {"p": pitch})
+        if hasattr(pitches, '__len__'):
+            notes_down[pitch].append(instrument.start_chord(pitches, volume / 127))
+        else:
+            notes_down[pitch].append(instrument.start_note(pitches, volume / 127))
+    elif volume == 0 and code == 144 or code == 143 or code == 128:
+        # note off message (or note on message with 0 velocity, which is sometimes how it's implemented)
+        # we use it to kill the gesture running for the note at the given pitch
+        if pedal_down:
+            pedal_held_notes[pitch].extend(notes_down[pitch])
+            notes_down[pitch].clear()
+        else:
+            for note in notes_down[pitch]:
+                note.end()
+            notes_down[pitch].clear()
+    elif code == 176 and pitch == 64:
+        # pedal change messages just get passed straight along to the MIDI_OUTPUT_DEVICE
+        # (with some warping of the values)
+        pedal_down = volume &gt; 0
+        if volume == 0:
+            for pitch_notes in pedal_held_notes:
+                for note in pitch_notes:
+                    note.end()
+                pitch_notes.clear()
+
+
+s.register_midi_listener("E-MU", midi_callback)
+s.wait_forever()
+
+
+======================================================================
+=== FILE: scamp:Interactivity &amp; visualization/Responding to a GUI/qt_interactive.py
+======================================================================
+
+"""
+SCAMP Example: Qt Interactive
+
+A draggable PyQt rectangle drives live playback in a server session. Moving the rectangle
+fires a callback that sets the tempo of the clock running the note loop; its vertical position
+still sets the pitch.
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+
+from PyQt5 import QtCore, QtWidgets
+
+
+class DraggableRect(QtWidgets.QGraphicsRectItem):
+    """Movable rectangle that calls `on_move(x, y)` each time it is dragged."""
+
+    def __init__(self, rect, on_move=None):
+        super().__init__(rect)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemSendsGeometryChanges, True)
+        self.on_move = on_move
+
+    def itemChange(self, change, value):
+        if change == QtWidgets.QGraphicsItem.ItemPositionChange and self.on_move is not None:
+            self.on_move(value.x(), value.y())
+        return super().itemChange(change, value)
+
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+        scene = QtWidgets.QGraphicsScene(self)
+        view = QtWidgets.QGraphicsView(scene)
+        scene.setSceneRect(QtCore.QRectF(0, 0, 800, 800))
+
+        self.setCentralWidget(view)
+
+        self.rect_item = DraggableRect(QtCore.QRectF(0, 0, 100, 100))
+        scene.addItem(self.rect_item)
+
+
+if __name__ == '__main__':
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    w = MainWindow()
+    w.setFixedSize(QtCore.QSize(800, 800))
+    w.show()
+
+    # map the rectangle's x position (0–800) to a tempo in BPM
+    tempo_response = Envelope([30, 600], [800], [3])
+
+    # leaving the `with` block kills the session (and the forked note loop), so closing
+    # the window shuts everything down gracefully rather than leaking the scheduler thread
+    with Session().run_as_server() as s:
+        piano = s.new_part("piano")
+        s.start_transcribing()
+
+        def play_notes():
+            while True:
+                piano.play_note((1 - w.rect_item.y() / 800) * 40 + 60, 1.0, 1.0)
+
+        play_clock = s.fork(play_notes)
+
+        # whenever the rectangle moves, retune the note loop's tempo from its x position
+        w.rect_item.on_move = lambda x, y: setattr(play_clock, "tempo", tempo_response.value_at(x))
+
+        app.exec_()  # blocks until the window is closed
+
+        performance = s.stop_transcribing()
+
+    performance.to_score().show()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Algorithmic approaches/conway.py
+======================================================================
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+"""
+SCAMP Example: Conway's Game of Life (pygame version)
+
+Conway's Game of Life sonified, with a pygame window used for visualization
+instead of matplotlib. Original by Raphael Radna; visualization ported to
+pygame.
+"""
+
+import numpy
+import pygame
+from scamp import *
+from scamp_extensions.pitch import Scale
+import math
+
+
+scale = Scale.melodic_minor(59)
+
+WIDTH = 24
+HEIGHT = 24
+CELL_SIZE = 24  # pixels per cell in the pygame window
+FPS = 20
+
+ALIVE_COLOR = (255, 255, 255)
+DEAD_COLOR = (0, 0, 0)
+BG_COLOR = (0, 0, 0)
+
+s = Session()
+scamp1 = s.new_part("piano")
+
+
+def bark_to_hz(bark):  # Traunmüller formula
+    return 1960 / (26.81 / (bark + 0.53) - 1)
+
+
+def ftom(hz, base=440):
+    return 12 * math.log(hz / base) / math.log(2) + 69
+
+
+def init_grid(x, y):
+    return numpy.random.choice([0, 1], (x, y))
+
+
+def wrap(val, lo, hi):
+    if val &lt; lo:
+        val += hi
+    if val &gt;= hi:
+        val -= hi
+    return val
+
+
+def get_cell(a, x, y, dx, dy):
+    return a[wrap((x + dx), 0, WIDTH), wrap((y + dy), 0, HEIGHT)]
+
+
+def sum_neighbors(a, x, y):
+    running_sum = 0
+    for i in range(3):
+        for j in range(3):
+            if i == 1 and j == 1:
+                continue
+            running_sum += get_cell(a, x, y, i - 1, j - 1)
+    return running_sum
+
+
+def apply_rules(a, b, x, y):
+    state = a[x, y]
+    neighbor_count = sum_neighbors(a, x, y)
+    if state == 1 and (neighbor_count &lt; 2 or neighbor_count &gt; 3):
+        b[x, y] = 0
+    if state == 0 and neighbor_count == 3:
+        b[x, y] = 1
+
+
+current_grid = init_grid(WIDTH, HEIGHT)
+next_grid = numpy.array(current_grid)
+note_grid = numpy.zeros((WIDTH, HEIGHT), dtype=object)
+
+
+def grid_play(a, x, y):
+    pan = y / HEIGHT
+    pitch = ftom(bark_to_hz((x / WIDTH) * 20 + pan))
+    cell_state = a[x, y]
+    note_state = note_grid[x, y]
+
+    if cell_state == 1 and note_state == 0:
+        note_grid[x, y] = scamp1.start_note(scale.round(pitch), 0.125, "param_10:{}".format(pan))
+
+    if cell_state == 0 and note_state != 0:
+        note_grid[x, y].end()
+        note_grid[x, y] = 0
+
+
+def update_grid():
+    global current_grid
+    global next_grid
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
+            grid_play(current_grid, x, y)
+            apply_rules(current_grid, next_grid, x, y)
+    current_grid[:, :] = next_grid[:, :]
+
+
+def randomize_grid():
+    global current_grid
+    global next_grid
+    # stop any currently sounding notes before scrambling the grid
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
+            if note_grid[x, y] != 0:
+                note_grid[x, y].end()
+                note_grid[x, y] = 0
+    current_grid = init_grid(WIDTH, HEIGHT)
+    next_grid = numpy.array(current_grid)
+
+
+def draw_grid(screen):
+    screen.fill(BG_COLOR)
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
+            color = ALIVE_COLOR if current_grid[x, y] == 1 else DEAD_COLOR
+            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(screen, color, rect)
+
+
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH * CELL_SIZE, HEIGHT * CELL_SIZE))
+    pygame.display.set_caption("Conway's Game of Life (SCAMP)")
+    clock = pygame.time.Clock()
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                randomize_grid()
+
+        update_grid()
+        draw_grid(screen)
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    # Clean up any still-sounding notes on exit
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
+            if note_grid[x, y] != 0:
+                note_grid[x, y].end()
+
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Larger-scale form/evanstein_barlicity.py
+======================================================================
+
+"""
+SCAMP Example: Barlicity
+
+A large interactive piece built on harmonicity and indispensability (barlicity extension),
+with multidimensional-scaling visualization in Qt. This was the initial script for the piece,
+which ultimately became the notated work for piano and electronics that you can view here:
+<a href="https://www.youtube.com/watch?v=xMpET9KKOrw">https://www.youtube.com/watch?v=xMpET9KKOrw</a>
+"""
+
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+#  This file is part of SCAMP (Suite for Computer-Assisted Music in Python)                      #
+#  Copyright © 2020 Marc Evanstein &lt;marc@marcevanstein.com&gt;.                                     #
+#                                                                                                #
+#  This program is free software: you can redistribute it and/or modify it under the terms of    #
+#  the GNU General Public License as published by the Free Software Foundation, either version   #
+#  3 of the License, or (at your option) any later version.                                      #
+#                                                                                                #
+#  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;     #
+#  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#  See the GNU General Public License for more details.                                          #
+#                                                                                                #
+#  You should have received a copy of the GNU General Public License along with this program.    #
+#  If not, see &lt;<a href="http://www.gnu.org/licenses/&gt">http://www.gnu.org/licenses/&gt</a>;.                                                   #
+#  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  #
+
+from scamp import *
+import sys
+from sklearn import manifold
+import numpy as np
+from scamp_extensions.composers.barlicity import harmonicity, _gaussian_discount, get_indispensability_array
+from scamp_extensions.pitch.utilities import midi_to_hertz, hertz_to_midi
+import random
+from PyQt5 import QtCore, QtWidgets, Qt
+import math
+from fractions import Fraction
+
+
+##################################################################################################################
+#                                       Setting up some of the guiding variables
+##################################################################################################################
+
+SCAN_PERIOD, WIDTH_AVERAGE, WIDTH_VARIATION, WIDTH_VARIATION_PERIOD, WIDTH_START_PHASE = \
+    160, 10.0, 5.0, 20, 3*math.pi / 2
+
+PIANO_TEMPO = 140
+HARPSICHORD_TEMPO = 840
+
+piano_distillation_timeline = Envelope((0, 1, 0), (120, 120))
+
+##################################################################################################################
+#                                             Set up the scale pitches
+##################################################################################################################
+
+
+root_frequency = midi_to_hertz(31)
+rationalized_bark_intervals = [Fraction(1, 1), Fraction(2, 1), Fraction(3, 1), Fraction(4, 1), Fraction(5, 1),
+                               Fraction(6, 1), Fraction(64, 9), Fraction(25, 3), Fraction(28, 3), Fraction(32, 3),
+                               Fraction(12, 1), Fraction(64, 5), Fraction(128, 9), Fraction(63, 4), Fraction(50, 3),
+                               Fraction(18, 1), Fraction(20, 1), Fraction(64, 3), Fraction(45, 2), Fraction(24, 1)]
+piano_scale = [hertz_to_midi(root_frequency * ratio) for ratio in rationalized_bark_intervals]
+harpsichord_scale = [x - 24 for x in piano_scale[11:]] + [x - 12 for x in piano_scale[11:]] + piano_scale[11:]
+
+##################################################################################################################
+#                                        Do the multidimensional scaling
+##################################################################################################################
+
+
+mds = manifold.MDS(n_components=2, dissimilarity="precomputed", random_state=152)
+harmonic_distances = np.array([
+    [abs(1/harmonicity((top / bottom).numerator, (top / bottom).denominator)) for bottom in rationalized_bark_intervals]
+    for top in rationalized_bark_intervals
+])
+mds_points = mds.fit(harmonic_distances).embedding_
+
+# scale those mds_points into the range 0-1000 in x and y coordinates for drawing
+point_range = min(x[0] for x in mds_points), max(x[0] for x in mds_points), \
+              min(x[1] for x in mds_points), max(x[1] for x in mds_points)
+scale_factor = 1000 / max(point_range[1] - point_range[0], point_range[3] - point_range[2])
+mds_points *= scale_factor
+mds_points += 500
+
+
+##################################################################################################################
+#                                                 Main QT Class
+##################################################################################################################
+
+
+class Barlicity(QtWidgets.QMainWindow):
+    def __init__(self, points):
+        super(Barlicity, self).__init__()
+
+        # set up the scene
+        scene = QtWidgets.QGraphicsScene(self)
+        view = QtWidgets.QGraphicsView(scene)
+        self.setCentralWidget(view)
+
+        window_size = int(QtWidgets.QDesktopWidget().availableGeometry(self).size().height() * 0.8)
+        self.resize(Qt.QSize(window_size, window_size))
+        view.setSceneRect(QtCore.QRectF(0, 0, 1000, 1000))
+        view.scale(window_size/1100, window_size/1100)
+
+        # create and position the scanner circle
+        self.circle = QtWidgets.QGraphicsEllipseItem(QtCore.QRectF(-50, -50, 100, 100))
+        self.circle.setOpacity(0.6)
+        self.circle.setBrush(Qt.QColor(0, 100, 255))
+        # these two variables are set from the scamp threads, and then they are read during the "do_frame" method (which
+        # operates in Qt land) and used to actually position the circle. GUI actions can only be on the main QT thread.
+        self.circle_center = (500, 500)
+        self.circle_width = scale_factor * (WIDTH_AVERAGE + WIDTH_VARIATION * math.sin(WIDTH_START_PHASE))
+        # Having defined them, since we're on the Qt thread right now, we position the circle
+        self.circle.setPos(*self.circle_center)
+        self.circle.setRect(-self.circle_width / 2, -self.circle_width / 2, self.circle_width, self.circle_width)
+        scene.addItem(self.circle)
+
+        # the scanner moves around between the different points; this keeps track of where it is
+        self.scanner_index = 0
+        self.set_scanner_position(0, 0)
+
+        view.setMouseTracking(True)
+        def mme(evt):
+            self.start()
+        view.mousePressEvent = mme
+
+        # create all of the points
+        self.points_graphics = []
+        for i, point in enumerate(points):
+            self.points_graphics.append(
+                scene.addEllipse(Qt.QRectF(point[0] - 5, point[1] - 5, 10, 10), brush=Qt.QColor(0, 0, 0))
+            )
+            text = scene.addText(str(i))
+            text.setPos(point[0] - 30 * len(str(i)) / 2, point[1])
+
+        self.contained_points = []
+        # this checks which points are currently in the scanner and puts their indices in self.contained_points
+        self.check_contained_points()
+
+        # set up the Qt repaint to happen every 10 milliseconds by calling self.do_frame
+        self.repaint_timer = QtCore.QTimer(self)
+        self.repaint_timer.timeout.connect(self.do_frame)
+        self.repaint_timer.start(10)
+        self.repaint()
+
+        # These scamp objects are defined when the window is shown
+        self.session = self.piano = self.harpsichord = None
+
+    def showEvent(self, a0):
+        # when the window is shown, we set up scamp
+        super().showEvent(a0)
+
+    def start(self):
+        self.session = Session().run_as_server()
+        self.harpsichord = self.session.new_part("harpsichord")
+        self.piano = self.session.new_part("piano")
+        self.session.fork(self.run_scanner, name="SCANNER_CLOCK")
+        piano_clock = self.session.fork(self.piano_part, initial_tempo=PIANO_TEMPO, name="PIANO_CLOCK")
+        self.session.fork(self.harpsichord_part, initial_tempo=HARPSICHORD_TEMPO, name="PIANO_CLOCK")
+        self.session.start_transcribing(clock=piano_clock)
+
+    def closeEvent(self, a0):
+        # when the window is closed, we stop transcribing and create a score
+        super().closeEvent(a0)
+        # the session only exists if the user clicked to start it
+        if self.session is not None:
+            self.session.kill()
+        # self.session.stop_transcribing().to_score(
+        #     time_signature="3/4", title="Barlicity (raw)", composer="Marc Evanstein").show_xml()
+
+    def piano_part(self):
+        piano_indispensabilities = get_indispensability_array(((3, 2), 3, 2), normalize=True)
+        last_piano_note_pool = None
+        self.piano.send_midi_cc(64, 1.0)
+        while True:
+            which_beat = int(round((get_beat() * 2) % len(piano_indispensabilities)))
+            this_indispensability = piano_indispensabilities[which_beat]
+            note_pool = [piano_scale[i] for i in self.contained_points]
+
+            if last_piano_note_pool != note_pool:
+                self.piano.send_midi_cc(64, 0.0)
+                self.piano.send_midi_cc(64, 1.0)
+
+            last_piano_note_pool = note_pool
+
+            syncopation_prob = 1 - ((self.circle_width / scale_factor - WIDTH_AVERAGE) / (2 * WIDTH_VARIATION) + 0.5)
+            piano_distillation_factor = piano_distillation_timeline.value_at(get_time())
+
+            # spensability is either indispensability or dispensability, depending on whether it's syncopated
+            spensability = this_indispensability if random.random() &lt; syncopation_prob else 1 - this_indispensability
+
+            if len(note_pool) &gt; 0 and spensability &gt;= piano_distillation_factor:
+                # distillation allows only the most "spensible" beats to play, and to play with bigger chords
+                # at distillation_factor 0, the number of notes should be 1,
+                # at distillation_factor 1 and spensibility 1, it should by all the notes
+                num_notes = int(1 + round(piano_distillation_factor * spensability * (len(note_pool) - 1)))
+                first_note_index = int(0.999 * spensability * (len(note_pool) - num_notes + 1))
+
+                volume = 0.4 + 0.5 * this_indispensability
+                self.piano.play_chord(note_pool[first_note_index: first_note_index + num_notes], volume, 0.5)
+            else:
+                wait(0.5)
+
+    def harpsichord_part(self):
+        harpsichord_indispensabilities = get_indispensability_array((2, 3, (3, 2)), normalize=True)
+
+        running = False
+        scale_index = None
+        direction = None
+        octave_transposition = 0
+
+        while True:
+            runniness = 0.02 + 0.98 * piano_distillation_timeline.value_at(get_time())
+            which_beat = int(round((get_beat()) % len(harpsichord_indispensabilities)))
+            this_indispensability = harpsichord_indispensabilities[which_beat]
+
+            if not running:
+                # if not running, a high runniness and a high indispensibility will tend to start a run
+                if random.random() &lt; runniness * this_indispensability:
+                    running = True
+                    octave_transposition = Barlicity.get_an_octave_transposition(get_time())
+                    # play the first note "on the beat"
+                    scale_index = random.randrange(len(harpsichord_scale) // 3) + len(harpsichord_scale) // 3
+                    direction = random.choice([-1, 1])
+                    self.harpsichord.play_note(harpsichord_scale[scale_index] + octave_transposition, 0.9, 1.0)
+                else:
+                    wait(1)
+            else:
+                # play the last note "on the beat"
+                scale_index += direction
+                self.harpsichord.play_note(harpsichord_scale[scale_index] + octave_transposition, 0.9, 1.0)
+
+                if random.random() * 1.5 &lt; this_indispensability or \
+                        scale_index == 0 or scale_index == len(harpsichord_scale) - 1:
+                    # change run direction if on an important beat or at the top or bottom
+                    direction *= -1
+
+                # if running, a low runniness and a high indispensibility will tend to stop a run
+                if random.random() &lt; (1 - runniness) * this_indispensability:
+                    running = False
+
+    @staticmethod
+    def get_an_octave_transposition(time_passed):
+        most_octaves_transposed = min(int((time_passed / 140.0) * 2), 2)
+
+        transposition = random.choice([-1, 1]) * random.choice(
+            [max(most_octaves_transposed - 1, 0), most_octaves_transposed])
+        return transposition * 12
+
+    def set_scanner_position(self, t, dt):
+        self.circle_width = scale_factor * (
+                WIDTH_AVERAGE + WIDTH_VARIATION *
+                math.sin(2 * math.pi * t / WIDTH_VARIATION_PERIOD + WIDTH_START_PHASE)
+        )
+
+        total_multiplier = 0
+        new_location = np.array([0.0, 0.0])
+        for i, point in enumerate(mds_points):
+            index_distance = min((i - self.scanner_index) % len(mds_points),
+                                 (self.scanner_index - i) % len(mds_points))
+            index_discount = _gaussian_discount(index_distance, 0, 0.45)
+            total_multiplier += index_discount
+            new_location[0] += point[0] * index_discount
+            new_location[1] += point[1] * index_discount
+
+        new_location /= total_multiplier
+        scanner_location = new_location
+        self.circle_center = scanner_location
+        self.scanner_index = (self.scanner_index + dt * len(mds_points) / SCAN_PERIOD) % len(mds_points)
+
+    def run_scanner(self):
+        while True:
+            wait(0.05)
+            self.set_scanner_position(self.session.time, 0.05)
+
+    def do_frame(self):
+        self.circle.setPos(*self.circle_center)
+        self.circle.setRect(-self.circle_width/2, -self.circle_width/2, self.circle_width, self.circle_width)
+        self.check_contained_points()
+        super().repaint()
+
+    def check_contained_points(self):
+        contained_points = []
+        for i, point in enumerate(self.points_graphics):
+            if self.circle.collidesWithItem(point):
+                contained_points.append(i)
+        self.contained_points = contained_points
+
+
+app = QtWidgets.QApplication(sys.argv)
+
+w = Barlicity(mds_points)
+w.show()
+
+app.exec_()
+
+
+======================================================================
+=== FILE: scamp_extensions:Composition &amp; form/Larger-scale form/leaf_loops.py
+======================================================================
+
+"""
+SCAMP Example: Leaf Loops
+
+Generative process behind Marc Evanstein's "Leaf Loops" for violin and viola. The shapes, note attack points,
+and worm shape for several different leaves are found in the LeafPoints directory.
+"""
+
+import pygame
+import json
+import math
+import numpy as np
+from shapely.geometry import LineString
+from scamp import *
+from scamp_extensions.pitch import Scale
+import random
+
+# ---------------------------------- Parameters -------------------------------------
+
+WHICH_LEAF = "LeafPoints/dwarfBirch"
+INSTRUMENT = "Vibraphone"
+WORM_SPEED = 0.4
+ROTATION_SPEED = 3  # Adjusted speed for leaf rotation
+PITCH_RANGE = 30, 100
+
+# SCALE = Scale.blues(34)
+# SCALE = Scale.chromatic(64)
+# SCALE = Scale.diatonic(55)
+SCALE = Scale.from_pitches([40, 45, 47, 50, 52, 55, 55.86, 57, 59, 60.86, 61.69, 62,
+                            64, 65.86, 66.69, 67, 69, 70.86, 71.69, 74, 76.69, 79], cycle=False)
+
+
+# ---------------------------------- Music Setup -------------------------------------
+
+
+s = Session().run_as_server()
+
+# vibes = s.new_midi_part(INSTRUMENT, "MIDI Through Port 1", note_on_and_off_only=True)
+vibes = s.new_part(INSTRUMENT, "vibraphone", note_on_and_off_only=True)
+
+
+def get_pitch_from_length(dist):
+    return SCALE.round(
+        PITCH_RANGE[1] - dist * (PITCH_RANGE[1] - PITCH_RANGE[0])
+    )
+
+# ----------------------------------- Animation ---------------------------------------
+
+WIDTH = 1200
+DOT_WIDTH = 18
+NOTE_LINE_WIDTH = 9
+LEAF_OUTLINE_LINE_WIDTH = 6
+LEAF_MINER_LINE_WIDTH = 10
+PLAYBACK_DOT_SWELL_FACTOR = 2
+PLAYBACK_DOT_SWELL_DECAY_FACTOR = 0.92
+
+# Load configurations
+def load_json(filepath):
+    with open(filepath, 'r') as f:
+        return json.load(f)
+    
+    
+# Load the leaf ring, worm curve, and attack points
+leaf_ring_coords = load_json(f"{WHICH_LEAF}.json")
+try:
+    worm_curve_coords = load_json(f"{WHICH_LEAF}Worm.json")
+except FileNotFoundError:
+    worm_curve_coords = [[0.5, 0.5], [0.50001, 0.50001]]
+
+# Convert to shapely LineString for interpolation
+leaf_ring = LineString(leaf_ring_coords)
+worm_curve = LineString(worm_curve_coords)
+# worm_curve = LineString([(0.5, 0.8), (0.5, 0.8001)])
+
+
+attack_points = load_json(f"{WHICH_LEAF}AttackPoints.json")
+#attack_points = [leaf_ring.length * (i + 1)/ 400 for i in range(400)]
+
+
+# Initialize Pygame
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, WIDTH))
+pygame.display.set_caption('Leaf Animation')
+clock = pygame.time.Clock()
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (19, 19, 19)
+LEAF_COLOR = (0, 0, 255)
+WORM_COLOR = (255, 0, 0)
+LINE_COLOR = (0, 128, 0)
+
+start_time = pygame.time.get_ticks()
+leaf_progress = 0
+worm_progress = 0
+next_attack_idx = 0
+
+playback_dot_swell_factor = 1
+
+
+def render_bg_surface(upscale_factor=4):
+    surface = pygame.Surface((WIDTH * upscale_factor, WIDTH * upscale_factor), pygame.SRCALPHA)
+    
+    # Draw leaf and worm paths
+    pygame.draw.lines(surface, WHITE, True, [(int(x * WIDTH* upscale_factor), int(y * WIDTH* upscale_factor))
+                                             for x, y in leaf_ring_coords], LEAF_OUTLINE_LINE_WIDTH * upscale_factor)
+    pygame.draw.lines(surface, (100, 100, 100), False, [(int(x * WIDTH* upscale_factor), int(y * WIDTH* upscale_factor))
+                                                        for x, y in worm_curve_coords], LEAF_MINER_LINE_WIDTH * upscale_factor)
+
+    return pygame.transform.smoothscale(surface, (WIDTH, WIDTH))
+
+
+leaf_bg = render_bg_surface(4)
+    
+    
+def play_note():
+    global playback_dot_swell_factor
+    playback_dot_swell_factor = PLAYBACK_DOT_SWELL_FACTOR
+    vibes.end_all_notes()
+    pitch = get_pitch_from_length(math.hypot(
+        (worm_position[0] - leaf_position[0]), (worm_position[1] - leaf_position[1])
+    )) 
+    vibes.start_note(pitch, random.uniform(0.5, 0.9))
+
+
+# Main loop
+running = True
+while running:
+    screen.fill(BLACK)
+    current_time = (pygame.time.get_ticks() - start_time) / 1000  # In seconds
+
+    # Update positions on leaf and worm paths
+    leaf_progress = (leaf_progress + ROTATION_SPEED * clock.get_time() / 1000) % leaf_ring.length
+    worm_progress = (worm_progress + WORM_SPEED * clock.get_time() / 1000) % worm_curve.length
+
+    # Leaf position on leaf ring
+    leaf_position = leaf_ring.interpolate(leaf_progress).coords[0]
+    leaf_pos = (int(leaf_position[0] * WIDTH), int(leaf_position[1] * WIDTH))
+
+    # Worm position on worm curve
+    worm_position = worm_curve.interpolate(worm_progress).coords[0]
+    worm_pos = (int(worm_position[0] * WIDTH), int(worm_position[1] * WIDTH))
+
+    # Draw background
+    screen.blit(leaf_bg, (0, 0))
+
+    # Draw line between leaf and worm
+    pygame.draw.line(screen, LINE_COLOR, leaf_pos, worm_pos, NOTE_LINE_WIDTH)
+    
+    # Draw dots for leaf and worm positions
+    pygame.draw.circle(screen, LEAF_COLOR, leaf_pos, DOT_WIDTH * playback_dot_swell_factor)
+    pygame.draw.circle(screen, WORM_COLOR, worm_pos, DOT_WIDTH)
+
+    # Check if we crossed an attack point
+    attack_point = attack_points[next_attack_idx]
+    if abs(leaf_progress - attack_point) &lt; ROTATION_SPEED * 0.05:
+        # Trigger a visual effect (e.g., change colors or line width)
+        next_attack_idx = (next_attack_idx + 1) % len(attack_points)
+        play_note()
+
+    # Event handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    if playback_dot_swell_factor &gt; 1:
+        playback_dot_swell_factor = max(PLAYBACK_DOT_SWELL_DECAY_FACTOR * playback_dot_swell_factor, 1)
+        
+    pygame.display.flip()
+    clock.tick(60)  # Cap to 60 FPS
+
+pygame.quit()</pre>
+</body>
+</html>
